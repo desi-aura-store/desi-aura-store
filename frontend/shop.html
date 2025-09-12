@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop - Desi Aura</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/api.js" defer></script>
+  <script src="assets/js/cart.js"></script>
+  <script src="assets/js/product-ui.js" defer></script>
+
+</head>
+  <body>
+  <header>
+    <h1>Desi Aura</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="shop.html">Shop</a>
+      <a href="cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+
+    </nav>
+  </header>
+
+  <section class="hero small-hero">
+    <h2>Our Collection</h2>
+    <p>Explore authentic fashion & accessories</p>
+  </section>
+
+  <main>
+    <section class="products" id="shop-products">
+      <!-- All products will load here via JS -->
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Desi Aura. All rights reserved.</p>
+  </footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const shopContainer = document.getElementById("shop-products");
+  let offset = 0;
+  const limit = 12;
+  let loading = false;
+  let done = false;
+
+  function showMessage(text) {
+    shopContainer.innerHTML = `<div class="empty-message">${text}</div>`;
+  }
+
+  async function loadProducts() {
+    if (loading || done) return;
+    loading = true;
+
+    // loader element
+    const loaderId = 'shop-loader';
+    if (!document.getElementById(loaderId)) {
+      const loader = document.createElement('div');
+      loader.id = loaderId;
+      loader.className = 'loader';
+      loader.innerText = 'Loading products...';
+      shopContainer.appendChild(loader);
+    }
+
+    try {
+      const res = await fetch(`${window.API_BASE_URL}/products?limit=${limit}&offset=${offset}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('API error ' + res.status);
+      const products = await res.json();
+
+      const loaderEl = document.getElementById(loaderId);
+      if (loaderEl) loaderEl.remove();
+
+      if (!Array.isArray(products) || products.length === 0) {
+        if (offset === 0) showMessage('No products found.');
+        done = true;
+        loading = false;
+        return;
+      }
+
+      products.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'product-card fade-in';
+        card.innerHTML = `
+          <div class="image-wrap">
+            <a class="product-link" href="product.html?id=${p.id}" aria-label="${p.name}">
+              <img src="/images/${ firstImage(p) }" alt="${p.name}">
+            </a>
+            <div class="actions">
+              <button class="add-btn" data-id="${p.id}" data-name="${encodeURIComponent(p.name)}" data-price="${p.price}">Add to cart</button>
+              <button class="buy-btn" data-id="${p.id}" data-name="${encodeURIComponent(p.name)}" data-price="${p.price}">Buy now</button>
+            </div>
+          </div>
+          <div class="product-info">
+            <h3>${p.name}</h3>
+            <p>₹${p.price}</p>
+          </div>
+        `;
+        shopContainer.appendChild(card);
+      });
+
+      offset += products.length;
+      if (products.length < limit) done = true;
+    } catch (err) {
+      console.error('Error loading products:', err);
+      const loaderEl = document.getElementById('shop-loader');
+      if (loaderEl) loaderEl.remove();
+      if (offset === 0) showMessage('Failed to load products. See console.');
+      done = true;
+    } finally {
+      loading = false;
+    }
+  }
+
+  // initial load
+  loadProducts();
+
+  // infinite scroll trigger
+  window.addEventListener('scroll', () => {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 220) {
+      loadProducts();
+    }
+  });
+
+  // NOTE: Add/Buy click handling and touch reveal are handled by assets/js/product-ui.js
+});
+</script>
+
+
+
+</body>
+</html>

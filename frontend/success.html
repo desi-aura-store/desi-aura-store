@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"> 
+  <title>Success</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header>
+  <h1>Desi Aura</h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+
+    
+  </nav>
+</header>
+
+  <main id="main"></main>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script>
+    (async function(){
+      const params = new URLSearchParams(location.search);
+      const id = params.get('orderId');
+      if (!id) { document.getElementById('main').innerText = 'No order ID'; return; }
+      const data = await API.getOrder(id);
+      if (data.error) { document.getElementById('main').innerText = 'Order not found'; return; }
+      document.getElementById('main').innerHTML = `
+        <h2>Thank you! Order #${data.id}</h2>
+        <p>Name: ${data.customerName}</p>
+        <p>Total: $${Number(data.total).toFixed(2)}</p>
+        <h3>Items</h3>
+        ${data.items.map(i => `<div>${i.quantity}x ${i.name} — $${i.lineTotal.toFixed(2)}</div>`).join('')}
+      `;
+    })();
+  </script>
+  <footer>
+  <p>&copy; 2025 Desi Aura. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

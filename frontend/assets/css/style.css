@@ -1,0 +1,659 @@
+
+/* ===========================
+   Global Styles for Desi Aura
+   =========================== */
+:root {
+  --primary: #8B1C42;
+  --accent: #D4A017;
+  --secondary: #F5E6D3;
+  --text-dark: #2C2C2C;
+  --text-light: #FFFFFF;
+  --background: #FFFFFF;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--text-dark);
+  line-height: 1.6;
+}
+
+/* Header */
+header {
+  background: var(--primary);
+  color: var(--text-light);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+header h1 {
+  font-size: 1.8rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+nav a {
+  color: var(--text-light);
+  text-decoration: none;
+  margin-left: 1.5rem;
+  font-weight: 500;
+}
+
+nav a:hover {
+  color: var(--accent);
+}
+
+/* Hero section (optional for homepage) */
+.hero {
+  background: linear-gradient(rgba(139,28,66,0.8), rgba(139,28,66,0.8)), url('../images/hero.jpg') center/cover no-repeat;
+  color: var(--text-light);
+  text-align: center;
+  padding: 5rem 2rem;
+}
+
+.hero h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.hero p {
+  font-size: 1.2rem;
+}
+
+/* Product grid */
+.products {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.product-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg, #fff);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform .22s ease, box-shadow .22s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+.product-card img {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.product-card:hover img {
+  transform: scale(1.08);
+}
+
+/* Center button */
+.center-btn {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.center-btn button {
+  background: var(--primary);
+  color: var(--text-light);
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.center-btn button:hover {
+  background: var(--accent);
+  color: var(--text-dark);
+}
+
+/* Hero section variations */
+.hero {
+  background: linear-gradient(rgba(139,28,66,0.7), rgba(139,28,66,0.7)), url('../images/hero.jpg') center/cover no-repeat;
+  color: var(--text-light);
+  text-align: center;
+  padding: 5rem 2rem;
+}
+
+.hero.small-hero {
+  padding: 3rem 2rem;
+}
+
+/* Animations */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.8s ease forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  header {
+    flex-direction: column;
+    text-align: center;
+  }
+  nav a {
+    margin: 0.5rem;
+  }
+}
+
+/* Cart / Checkout */
+form input, form select {
+  padding: 0.6rem;
+  margin: 0.5rem 0;
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+form button {
+  background: var(--primary);
+  color: var(--text-light);
+  border: none;
+  padding: 0.8rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+form button:hover {
+  background: var(--accent);
+  color: var(--text-dark);
+}
+
+/* Footer */
+footer {
+  background: var(--primary);
+  color: var(--text-light);
+  text-align: center;
+  padding: 1rem;
+  margin-top: 2rem;
+}
+/* Cart summary box */
+.cart-summary {
+  background: var(--secondary);
+  padding: 1.5rem;
+  margin: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  text-align: left;
+}
+
+.cart-summary h2 {
+  margin-bottom: 1rem;
+  color: var(--primary);
+}
+
+.cart-summary p {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+/* Product card action overlay (hover / touch reveal) */
+.product-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--secondary);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+/* image behavior */
+.product-card img {
+  display: block;
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  transition: transform .45s cubic-bezier(.2,.9,.3,1);
+}
+
+/* lift on hover */
+.product-card:hover { transform: translateY(-6px); box-shadow: 0 10px 22px rgba(0,0,0,.12); }
+.product-card:hover img { transform: scale(1.06); }
+
+/* actions container (hidden by default) */
+.product-card .actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 12px;
+  transform: translateY(110%);
+  transition: transform .28s cubic-bezier(.2,.9,.3,1), opacity .2s;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* buttons */
+.product-card .actions button {
+  padding: 0.6rem 1.05rem;
+  border-radius: 28px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+  transform: translateY(6px);
+  transition: transform .18s ease, opacity .18s ease;
+}
+
+/* primary and secondary styles — tweak to match brand */
+.product-card .actions .add-btn {
+  background: #ffffff;
+  color: #333;
+}
+.product-card .actions .buy-btn {
+  background: var(--primary);
+  color: var(--text-light);
+}
+
+/* reveal on hover or when 'show-actions' class set (touch) */
+.product-card:hover .actions,
+.product-card.show-actions .actions {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.product-card:hover .actions button,
+.product-card.show-actions .actions button {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* small screen: use slightly different spacing */
+@media (max-width: 640px) {
+  .product-card img { height: 220px; }
+  .product-card .actions { bottom: 12px; gap: 8px; }
+  .product-card .actions button { padding: 0.55rem .9rem; font-size: 0.95rem; }
+}
+
+/* cart count */
+.cart-count {
+  background: crimson;
+  color: white;
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  border-radius: 50%;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+/* image container holds image + action overlay */
+.image-wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: #f6f6f6;
+}
+
+/* image */
+.image-wrap img {
+  display: block;
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  transition: transform .45s cubic-bezier(.2,.9,.3,1);
+}
+
+/* product info sits below image, never overlapped */
+.product-info {
+  padding: 12px 14px;
+  background: transparent;
+  color: var(--text, #222);
+}
+
+/* actions are inside the image-wrap and hidden by default (slide up) */
+.image-wrap .actions {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 110%); /* hidden below image */
+  bottom: 12px;
+  display: flex;
+  gap: 10px;
+  pointer-events: none;
+  opacity: 0;
+  transition: transform .28s cubic-bezier(.2,.9,.3,1), opacity .18s;
+  z-index: 5;
+}
+
+/* button styles */
+.image-wrap .actions button {
+  padding: 0.5rem 0.9rem;
+  border-radius: 26px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  pointer-events: auto; /* enable when visible */
+  transform: translateY(6px);
+  transition: transform .18s ease, opacity .18s ease;
+}
+
+/* visible state on hover or .show-actions for touch */
+.product-card:hover .image-wrap img,
+.product-card.show-actions .image-wrap img {
+  transform: scale(1.06);
+}
+.product-card:hover .image-wrap .actions,
+.product-card.show-actions .image-wrap .actions {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.product-card:hover .image-wrap .actions button,
+.product-card.show-actions .image-wrap .actions button {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* ensure actions don't overlap product-info (they're inside image area) */
+.product-info h3 { margin: 0 0 6px 0; font-size: 1rem; }
+.product-info p { margin: 0; color: #666; font-size: 0.95rem; }
+
+/* tweak sizes for mobile */
+@media (max-width: 640px) {
+  .image-wrap img { height: 220px; }
+  .image-wrap .actions { bottom: 10px; gap: 8px; }
+  .image-wrap .actions button { padding: 0.45rem 0.8rem; font-size: 0.92rem; }
+}
+
+/* Product page layout */
+.product-page {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  padding: 28px;
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+/* Gallery stage */
+.gallery-stage {
+  position: relative;
+  display:flex;
+  align-items:center;
+}
+
+.gallery-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  padding: 12px 0;
+  scroll-behavior: smooth;
+}
+.gallery-track .slide {
+  min-width: 80%;
+  max-width: 100%;
+  flex: 0 0 80%;
+  scroll-snap-align: center;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  border-radius: 12px;
+  background: #f8f8f8;
+  overflow: hidden;
+}
+.gallery-track .slide img {
+  width: 100%;
+  height: 420px;
+  object-fit: cover;
+  display:block;
+}
+
+/* arrows */
+.g-arrow {
+  background: rgba(255,255,255,0.9);
+  border: 1px solid rgba(0,0,0,0.06);
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 0 8px;
+  z-index: 6;
+}
+.g-arrow.left { margin-left: 0; }
+.g-arrow.right { margin-right: 0; }
+
+/* thumbnails row */
+.gallery-thumbs {
+  display:flex;
+  gap:10px;
+  margin-top: 12px;
+  overflow-x:auto;
+  padding-bottom:6px;
+}
+.gallery-thumbs .thumb {
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.7;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.gallery-thumbs .thumb img {
+  height: 64px;
+  width: 80px;
+  object-fit: cover;
+  display:block;
+}
+.gallery-thumbs .thumb.active { opacity: 1; box-shadow: 0 6px 18px rgba(0,0,0,0.08); transform: translateY(-4px); }
+
+/* dots */
+.gallery-dots { margin-top: 10px; display:flex; gap:8px; }
+.gallery-dots .dot {
+  width:10px; height:10px; border-radius:50%; background:#ddd; border:none; cursor:pointer;
+}
+.gallery-dots .dot.active { background: var(--primary); }
+
+/* product details column */
+.product-details { padding: 8px 6px; }
+.product-details h2 { margin: 0 0 8px 0; font-size: 1.4rem; }
+.product-details .p-desc { margin-top: 12px; color: #444; line-height: 1.5; }
+.product-actions { margin-top: 18px; display:flex; align-items:center; gap:12px; }
+.qty-label input { width:72px; padding:6px; border-radius:6px; border:1px solid #ddd; }
+
+/* buttons */
+.btn { padding: 10px 14px; border-radius: 8px; border: none; cursor:pointer; font-weight:600; }
+.add-primary { background: #fff; color:#333; border:1px solid #ddd; }
+.buy-primary { background: var(--primary); color: var(--text-light); }
+
+/* responsive */
+@media (max-width: 900px) {
+  .product-page { grid-template-columns: 1fr; padding: 16px; }
+  .gallery-track .slide img { height: 320px; }
+}
+
+/* ==========================
+   Mobile-first responsive improvements
+   Append to assets/css/style.css
+   ========================== */
+
+/* base tweaks */
+:root {
+  --site-max: 1200px;
+  --gap: 14px;
+  --primary: #8b1f3a; /* keep your brand color */
+  --muted: #f2e7df;
+  --card-bg: #fff;
+  --text: #222;
+  --muted-text: #666;
+  --radius: 12px;
+}
+
+/* global body sizing for mobile */
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  font-size: 16px; /* good baseline for mobile */
+  line-height: 1.45;
+  color: var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  padding: 0;
+  margin: 0;
+}
+
+/* container - center content and limit width */
+main, .product-page {
+  max-width: var(--site-max);
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* header: compact and touch-friendly */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--primary);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+header h1 { font-size: 1.05rem; margin: 0; }
+header nav { display: flex; gap: 12px; align-items:center; }
+header nav a { color: rgba(255,255,255,0.95); text-decoration: none; padding: 8px 10px; border-radius: 8px; font-weight:600;}
+header nav a:hover { background: rgba(255,255,255,0.06); }
+
+/* hero smaller on mobile */
+.hero {
+  padding: 28px 12px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(139,31,58,0.95), rgba(139,31,58,0.85));
+  color: white;
+  border-radius: 8px;
+  margin: 12px auto;
+}
+.hero h2 { margin: 0 0 6px; font-size: 1.4rem; }
+.hero p { margin: 0; opacity: 0.95; font-size: 0.95rem; }
+
+/* products grid - responsive */
+.products {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: repeat(2, 1fr); /* default on small phones: 2 columns */
+  margin-top: 18px;
+}
+
+/* product card - compact and touch friendly */
+.product-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(10,10,10,0.05);
+  transition: transform .18s ease, box-shadow .18s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+/* image area */
+.image-wrap {
+  position: relative;
+  width: 100%;
+  background: #f6f3f0;
+}
+.image-wrap img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display:block;
+}
+
+/* product info */
+.product-info {
+  padding: 10px 12px;
+}
+.product-info h3 { margin: 0 0 6px; font-size: 0.98rem; }
+.product-info p { margin: 0; color: var(--muted-text); font-size: 0.9rem; }
+
+/* actions overlay inside image - appears on hover or .show-actions */
+.image-wrap .actions {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 110%);
+  bottom: 10px;
+  display:flex;
+  gap:8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .22s cubic-bezier(.2,.9,.3,1), opacity .12s;
+}
+.image-wrap .actions button {
+  border-radius: 28px;
+  padding: 8px 10px;
+  border: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* visible actions */
+.product-card:hover .image-wrap .actions,
+.product-card.show-actions .image-wrap .actions {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* larger tap targets on mobile - full width action stack */
+@media (max-width: 480px) {
+  .products { grid-template-columns: 1fr; }
+  .image-wrap img { height: 260px; }
+  .image-wrap .actions { left: 50%; display: flex; gap: 8px; }
+  .image-wrap .actions button { padding: 10px 14px; font-size: 1rem; }
+  header nav a { padding: 10px 12px; font-size: 0.95rem; }
+  .hero h2 { font-size: 1.25rem; }
+}
+
+/* medium screens */
+@media (min-width: 481px) and (max-width: 899px) {
+  .products { grid-template-columns: repeat(2, 1fr); }
+  .image-wrap img { height: 260px; }
+}
+
+/* desktop */
+@media (min-width: 900px) {
+  .products { grid-template-columns: repeat(3, 1fr); }
+  .image-wrap img { height: 300px; }
+}
+
+/* loader and empty */
+.loader, .empty-message {
+  padding: 26px;
+  text-align:center;
+  color: var(--muted-text);
+}
+
+/* ensure footer has padding on mobile */
+footer { padding: 18px; text-align:center; background: var(--primary); color:#fff; margin-top: 24px; }

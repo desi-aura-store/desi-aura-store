@@ -1,0 +1,209 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Product — Desi Aura</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header>
+    <h1>Desi Aura</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="shop.html">Shop</a>
+      <a href="cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+    </nav>
+  </header>
+
+  <main class="product-page">
+    <section class="product-gallery">
+      <div class="gallery-stage">
+        <button class="g-arrow left" aria-label="Previous image">&larr;</button>
+        <div class="gallery-track" id="gallery-track" tabindex="0" aria-label="Product images">
+          <!-- slides injected here -->
+        </div>
+        <button class="g-arrow right" aria-label="Next image">&rarr;</button>
+      </div>
+
+      <div class="gallery-thumbs" id="gallery-thumbs" aria-hidden="false">
+        <!-- thumbnails injected here -->
+      </div>
+
+      <div class="gallery-dots" id="gallery-dots" aria-hidden="false"></div>
+    </section>
+
+    <section class="product-details" id="product-details">
+      <!-- product info injected here -->
+      <h2 id="p-name">Loading…</h2>
+      <p id="p-price"></p>
+      <div id="p-desc" class="p-desc"></div>
+
+      <div class="product-actions">
+        <label class="qty-label">Qty: <input id="p-qty" type="number" min="1" value="1"></label>
+        <button id="add-to-cart" class="btn add-primary">Add to cart</button>
+        <button id="buy-now" class="btn buy-primary">Buy now</button>
+      </div>
+
+      <div class="product-meta" id="product-meta"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Desi Aura. All rights reserved.</p>
+  </footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/cart.js"></script>
+  <script src="assets/js/product-ui.js" defer></script>
+
+  <script>
+  (async function(){
+    // Utilities
+    const qs = new URLSearchParams(location.search);
+    const id = qs.get('id');
+    const rootTrack = document.getElementById('gallery-track');
+    const thumbsRoot = document.getElementById('gallery-thumbs');
+    const dotsRoot = document.getElementById('gallery-dots');
+    const nameEl = document.getElementById('p-name');
+    const priceEl = document.getElementById('p-price');
+    const descEl = document.getElementById('p-desc');
+    const qtyEl = document.getElementById('p-qty');
+    const addBtn = document.getElementById('add-to-cart');
+    const buyBtn = document.getElementById('buy-now');
+
+    if (!id) {
+      nameEl.textContent = 'No product id';
+      return;
+    }
+
+    try {
+      const p = await API.getProduct(id);
+      if (!p || p.error) throw new Error('Product not found');
+
+      // normalize images: prefer p.images array, otherwise parse p.image
+      let images = [];
+      if (Array.isArray(p.images) && p.images.length) images = p.images.slice();
+      else if (typeof p.image === 'string' && p.image.trim()) {
+        if (p.image.includes(',')) images = p.image.split(',').map(s=>s.trim()).filter(Boolean);
+        else if (p.image.includes('|')) images = p.image.split('|').map(s=>s.trim()).filter(Boolean);
+        else images = [p.image.trim()];
+      } else {
+        images = ['placeholder.jpg']; // fallback (ensure placeholder exists)
+      }
+
+      // render product info
+      nameEl.textContent = p.name;
+      priceEl.textContent = `₹${Number(p.price).toFixed(2)}`;
+      descEl.innerHTML = `<p>${p.description || ''}</p>`;
+      document.getElementById('product-meta').innerHTML = `<small>Category: ${p.category || '—'} • Stock: ${p.stock ?? '—'}</small>`;
+
+      // build slides
+      rootTrack.innerHTML = '';
+      thumbsRoot.innerHTML = '';
+      dotsRoot.innerHTML = '';
+
+      images.forEach((img, idx) => {
+        const slide = document.createElement('div');
+        slide.className = 'slide';
+        slide.dataset.index = idx;
+        slide.innerHTML = `<img src="/images/${img}" alt="${p.name} - ${idx+1}">`;
+        rootTrack.appendChild(slide);
+
+        const thumb = document.createElement('button');
+        thumb.className = 'thumb';
+        thumb.dataset.index = idx;
+        thumb.innerHTML = `<img src="/images/${img}" alt="thumb ${idx+1}">`;
+        thumbsRoot.appendChild(thumb);
+
+        const dot = document.createElement('button');
+        dot.className = 'dot';
+        dot.dataset.index = idx;
+        dotsRoot.appendChild(dot);
+      });
+
+      // Simple gallery mechanics
+      let current = 0;
+      const slides = Array.from(rootTrack.children);
+      const thumbs = Array.from(thumbsRoot.children);
+      const dots = Array.from(dotsRoot.children);
+
+      function updateUI(to) {
+        current = to;
+        // scroll track so that slide is centered (uses scroll snap)
+        const slideEl = slides[to];
+        if (slideEl) slideEl.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+        // highlight thumb & dot
+        thumbs.forEach(t => t.classList.toggle('active', Number(t.dataset.index) === to));
+        dots.forEach(d => d.classList.toggle('active', Number(d.dataset.index) === to));
+      }
+
+      // initial highlight
+      updateUI(0);
+
+      // arrows
+      document.querySelectorAll('.g-arrow.left, .g-arrow.right').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          if (btn.classList.contains('left')) updateUI(Math.max(0, current - 1));
+          else updateUI(Math.min(slides.length - 1, current + 1));
+        });
+      });
+
+      // thumbs click
+      thumbs.forEach(t => t.addEventListener('click', () => updateUI(Number(t.dataset.index))));
+
+      // dots click
+      dots.forEach(d => d.addEventListener('click', () => updateUI(Number(d.dataset.index))));
+
+      // track scroll -> set "current" when snapping finished
+      let scrollTimer;
+      rootTrack.addEventListener('scroll', () => {
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => {
+          // find the slide closest to center
+          const centerX = rootTrack.scrollLeft + (rootTrack.clientWidth / 2);
+          let best = 0; let bestDiff = Infinity;
+          slides.forEach((s, i) => {
+            const rect = s.getBoundingClientRect();
+            const sLeft = s.offsetLeft;
+            const sCenter = sLeft + (s.offsetWidth / 2);
+            const diff = Math.abs(sCenter - centerX);
+            if (diff < bestDiff) { bestDiff = diff; best = i; }
+          });
+          updateUI(best);
+        }, 120);
+      });
+
+      // keyboard left/right
+      rootTrack.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') updateUI(Math.max(0, current - 1));
+        if (e.key === 'ArrowRight') updateUI(Math.min(slides.length - 1, current + 1));
+      });
+
+      // Add to cart / Buy now wiring
+      addBtn.addEventListener('click', () => {
+        const qty = Math.max(1, Number(qtyEl.value) || 1);
+        addToCart(Number(p.id), p.name, Number(p.price), qty);
+        // show ephemeral feedback
+        addBtn.textContent = 'Added ✓';
+        setTimeout(()=> addBtn.textContent = 'Add to cart', 900);
+      });
+
+      buyBtn.addEventListener('click', () => {
+        const qty = Math.max(1, Number(qtyEl.value) || 1);
+        addToCart(Number(p.id), p.name, Number(p.price), qty);
+        // redirect to checkout (your flow)
+        location.href = 'checkout.html';
+      });
+
+    } catch (err) {
+      console.error(err);
+      nameEl.textContent = 'Product not found';
+      descEl.textContent = '';
+    }
+  })();
+  </script>
+
+</body>
+</html>

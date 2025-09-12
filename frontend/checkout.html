@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"> 
+  <title>Checkout</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header>
+  <h1>Desi Aura</h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+
+    
+  </nav>
+</header>
+
+  <main>
+    <h2>Checkout (Cash on Delivery)</h2>
+    <form id="form">
+      <label>Name: <input name="name" required></label><br>
+      <label>Phone: <input name="phone" required></label><br>
+      <label>Email: <input name="email"></label><br>
+      <label>Address: <textarea name="address" required></textarea></label><br>
+      <button type="submit">Place Order (COD)</button>
+    </form>
+  </main>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/cart.js"></script>
+  <script>
+    document.getElementById('form').addEventListener('submit', async function(e){
+      e.preventDefault();
+      const cart = loadCart();
+      if (!cart.length) return alert('Cart empty');
+      const form = new FormData(e.target);
+      const payload = {
+        customerName: form.get('name'),
+        customerPhone: form.get('phone'),
+        customerEmail: form.get('email'),
+        address: form.get('address'),
+        items: cart.map(i => ({ productId: i.productId, quantity: i.quantity }))
+      };
+      const res = await API.createOrder(payload);
+      if (res && res.orderId) {
+        clearCart();
+        location.href = `success.html?orderId=${res.orderId}`;
+      } else {
+        alert('Error placing order');
+      }
+    });
+  </script>
+  <footer>
+  <p>&copy; 2025 Desi Aura. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

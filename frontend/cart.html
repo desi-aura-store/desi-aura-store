@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"> 
+  <title>Cart</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header>
+  <h1>Desi Aura</h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+
+  </nav>
+</header>
+
+  <main>
+    <h2>Your Cart</h2>
+   <div id="cart"></div>
+  </main>
+  <section class="cart-summary">
+  <h2>Order Summary</h2>
+  <p>Total: <span id="cart-total">₹0</span></p>
+  <a href="checkout.html">
+    <button>Proceed to Checkout</button>
+  </a>
+</section>
+
+  <script src="assets/js/cart.js"></script>
+  <script>
+    function render() {
+    const cart = loadCart();
+    const root = document.getElementById('cart');
+    if (!cart.length) {
+      root.innerHTML = '<p>Cart is empty</p>';
+      document.getElementById('cart-total').innerText = '₹0.00';
+      return;
+    }
+    root.innerHTML = cart.map(i => `
+      <div>
+        <strong>${i.name}</strong> — ${i.quantity} × ₹${i.price.toFixed(2)}
+        <button data-id="${i.productId}" class="remove">Remove</button>
+      </div>
+    `).join('');
+    document.getElementById('cart-total').innerText = '₹' + getCartTotal().toFixed(2);
+    root.querySelectorAll('.remove').forEach(btn =>
+      btn.addEventListener('click', e => { removeFromCart(Number(e.target.dataset.id)); render(); })
+    );
+  }
+  render();
+  </script>
+  <p>Total: <span id="cart-total">₹0</span></p>
+  <footer>
+    
+  <p>&copy; 2025 Desi Aura. All rights reserved.</p>
+</footer>
+
+</body>
+</html>
