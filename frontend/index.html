@@ -3,86 +3,200 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1"> 
-  <title>Store — Home</title>
+  <title>Desi Aura — Home</title>
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
   <header>
-  <h1>Desi Aura</h1>
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="shop.html">Shop</a>
-    <a href="cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+    <h1>Desi Aura</h1>
+    <nav>
+      <a href="/index.html">Home</a>
+      <a href="/shop.html">Shop</a>
+      <a href="/cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+    </nav>
+  </header>
 
-  
-  </nav>
-</header>
   <main>
     <section class="hero">
-  <h2>Welcome to Desi Aura</h2>
-  <p>Authentic clothing & accessories that reflect your style</p>
-</section>
- <section class="products" id="featured-products">
-    <!-- 3 products will load here via JS -->
-  </section>
-  <div class="center-btn">
-    <a href="shop.html"><button>View All Products</button></a>
-  </div>
-    <div id="products"></div>
+      <h2>Welcome to Desi Aura</h2>
+      <p>Authentic clothing & accessories that reflect your style</p>
+      <a href="shop.html" class="cta-button">Shop Now</a>
+    </section>
+    
+    <section id="featured" class="featured-products">
+      <h2 class="section-title">Featured Products</h2>
+      <div id="featured-products" class="products">
+        <!-- Products will load here via JS -->
+      </div>
+      <div class="view-all-container">
+        <a href="/shop.html" class="view-all-btn">View All Products</a>
+      </div>
+    </section>
+    
+    <section class="categories-section">
+      <div class="categories-container">
+        <h2 class="section-title">Shop by Category</h2>
+        <div class="categories-grid">
+          <div class="category-card">
+            <div class="category-image">
+              <img src="/images/women-category.jpg" alt="Women's Clothing">
+            </div>
+            <div class="category-info">
+              <h3>Women's Collection</h3>
+              <p>Elegant sarees, kurtas, and more</p>
+              <a href="/shop.html?category=Women" class="category-link">Shop Now →</a>
+            </div>
+          </div>
+          
+          <div class="category-card">
+            <div class="category-image">
+              <img src="/images/men-category.jpg" alt="Men's Clothing">
+            </div>
+            <div class="category-info">
+              <h3>Men's Collection</h3>
+              <p>Traditional and contemporary wear</p>
+              <a href="/shop.html?category=Men" class="category-link">Shop Now →</a>
+            </div>
+          </div>
+          
+          <div class="category-card">
+            <div class="category-image">
+              <img src="/images/accessories-category.jpg" alt="Accessories">
+            </div>
+            <div class="category-info">
+              <h3>Accessories</h3>
+              <p>Complete your look with our accessories</p>
+              <a href="/shop.html?category=Accessories" class="category-link">Shop Now →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="benefits-section">
+      <h2 class="section-title">Why Choose Desi Aura</h2>
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <div class="benefit-icon">🌟</div>
+          <h3>Premium Quality</h3>
+          <p>Handpicked fabrics and meticulous craftsmanship</p>
+        </div>
+        
+        <div class="benefit-card">
+          <div class="benefit-icon">🚚</div>
+          <h3>Free Shipping</h3>
+          <p>On all orders, no minimum purchase required</p>
+        </div>
+        
+        <div class="benefit-card">
+          <div class="benefit-icon">💰</div>
+          <h3>Cash on Delivery</h3>
+          <p>Pay when you receive your order</p>
+        </div>
+        
+        <div class="benefit-card">
+          <div class="benefit-icon">🔄</div>
+          <h3>Easy Returns</h3>
+          <p>30-day return policy for your peace of mind</p>
+        </div>
+      </div>
+    </section>
+    
+    <section class="newsletter-section">
+      <div class="newsletter-container">
+        <h2>Stay Updated</h2>
+        <p>Subscribe to our newsletter for exclusive offers and new arrivals</p>
+        <form class="newsletter-form">
+          <input type="email" placeholder="Your email address" required>
+          <button type="submit">Subscribe</button>
+        </form>
+      </div>
+    </section>
   </main>
+
+  <footer>
+    <p>&copy; 2025 Desi Aura. All rights reserved.</p>
+  </footer>
+
   <script src="assets/js/config.js"></script>
   <script src="assets/js/api.js"></script>
   <script src="assets/js/cart.js"></script>
   <script src="assets/js/product-ui.js" defer></script>
+  <script src="assets/js/router.js"></script>
 
-<script>
-document.addEventListener("DOMContentLoaded", async () => {
-  const featured = document.getElementById("featured-products");
-  featured.innerHTML = '';
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const featured = document.getElementById("featured-products");
+      featured.innerHTML = '';
 
-  try {
-    const res = await fetch(`${window.API_BASE_URL}/products?limit=3&offset=0`, { cache: 'no-store' });
-    if (!res.ok) throw new Error('Failed fetching featured products: ' + res.status);
-    const products = await res.json();
+      try {
+        const res = await fetch(`${window.API_BASE_URL}/products?limit=3&offset=0`, { cache: 'no-store' });
+        if (!res.ok) throw new Error('Failed fetching featured products: ' + res.status);
+        const products = await res.json();
 
-    if (!Array.isArray(products) || products.length === 0) {
-      featured.innerHTML = '<p class="empty-message">No featured products.</p>';
-      return;
-    }
+        if (!Array.isArray(products) || products.length === 0) {
+          featured.innerHTML = '<p class="empty-message">No featured products.</p>';
+          return;
+        }
 
-    products.forEach(p => {
-      const card = document.createElement('div');
-      card.className = 'product-card fade-in';
-      card.innerHTML = `
-        <div class="image-wrap">
-          <a class="product-link" href="product.html?id=${p.id}" aria-label="${p.name}">
-            <img src="/images/${ firstImage(p) }" alt="${p.name}">
-          </a>
-          <div class="actions">
-            <button class="add-btn" data-id="${p.id}" data-name="${encodeURIComponent(p.name)}" data-price="${p.price}">Add to cart</button>
-            <button class="buy-btn" data-id="${p.id}" data-name="${encodeURIComponent(p.name)}" data-price="${p.price}">Buy now</button>
-          </div>
-        </div>
-        <div class="product-info">
-          <h3>${p.name}</h3>
-          <p>₹${p.price}</p>
-        </div>
-      `;
-      featured.appendChild(card);
+        // Update the product card creation in index.html
+        products.forEach(p => {
+          const card = document.createElement('div');
+          card.className = 'product-card fade-in';
+          
+          // Calculate discount percentage if original price exists
+          const discountPercent = p.originalPrice ? 
+            Math.round((1 - p.price / p.originalPrice) * 100) : 0;
+          
+          card.innerHTML = `
+            <div class="image-wrap">
+              <a class="product-link" href="/product.html?id=${p.id}" aria-label="${p.name}">
+                <img src="/images/${firstImage(p) }" alt="${p.name}">
+              </a>
+              <div class="actions">
+                <button class="add-btn" data-id="${p.id}" data-name="${encodeURIComponent(p.name)}" data-price="${p.price}">Add to cart</button>
+                <button class="buy-btn" data-id="${p.id}" data-name="${encodeURIComponent(p.name)}" data-price="${p.price}">Buy now</button>
+              </div>
+            </div>
+            <div class="product-info">
+              <h3>${p.name}</h3>
+              <div class="price-container">
+                ${p.originalPrice ? `<span class="original-price">₹${p.originalPrice}</span>` : ''}
+                <span class="current-price">₹${p.price}</span>
+                ${discountPercent > 0 ? `<span class="discount-badge">${discountPercent}% OFF</span>` : ''}
+              </div>
+            </div>
+          `;
+          featured.appendChild(card);
+        });
+
+      } catch (err) {
+        console.error(err);
+        featured.innerHTML = '<p class="empty-message">Failed to load featured products.</p>';
+      }
+      
+      // Newsletter form submission
+      document.querySelector('.newsletter-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const email = this.querySelector('input[type="email"]').value;
+        
+        // Simple form feedback
+        const button = this.querySelector('button');
+        const originalText = button.textContent;
+        button.textContent = 'Subscribed!';
+        button.style.background = '#27ae60';
+        
+        // Reset after 3 seconds
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.style.background = '';
+          this.reset();
+        }, 3000);
+        
+        // Here you would normally send the email to your server
+        console.log('Newsletter subscription for:', email);
+      });
     });
-
-  } catch (err) {
-    console.error(err);
-    featured.innerHTML = '<p class="empty-message">Failed to load featured products.</p>';
-  }
-});
-</script>
-
-
-
-  <footer>
-  <p>&copy; 2025 Desi Aura. All rights reserved.</p>
-</footer>
-
+  </script>
 </body>
 </html>

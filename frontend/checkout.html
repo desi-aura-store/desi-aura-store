@@ -2,59 +2,544 @@
 <html>
 <head>
   <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1"> 
-  <title>Checkout</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"> 
+  <title>Checkout — Desi Aura</title>
   <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    /* Checkout-specific styles */
+    .checkout-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .checkout-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--border-color);
+    }
+    
+    .checkout-header h2 {
+      font-size: 1.8rem;
+      color: var(--primary);
+    }
+    
+    .back-to-cart {
+      background: var(--background);
+      color: var(--primary);
+      border: 2px solid var(--primary);
+      padding: 10px 20px;
+      border-radius: 30px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .back-to-cart:hover {
+      background: var(--primary);
+      color: var(--text-light);
+    }
+    
+    .checkout-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+    
+    .checkout-form {
+      background: var(--background);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 25px;
+    }
+    
+    .form-section {
+      margin-bottom: 25px;
+    }
+    
+    .form-section h3 {
+      margin: 0 0 15px 0;
+      color: var(--primary);
+      font-size: 1.3rem;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+    
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+      box-sizing: border-box;
+    }
+    
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    
+    .form-note {
+      font-size: 0.9rem;
+      color: var(--muted-text);
+      margin-top: 5px;
+    }
+    
+    .error-message {
+      color: #e74c3c;
+      font-size: 0.85rem;
+      margin-top: 5px;
+      display: none;
+    }
+    
+    .order-summary {
+      background: var(--secondary);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 25px;
+      height: fit-content;
+    }
+    
+    .order-summary h3 {
+      margin: 0 0 20px 0;
+      color: var(--primary);
+      font-size: 1.5rem;
+      text-align: center;
+    }
+    
+    .order-items {
+      margin-bottom: 20px;
+    }
+    
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .order-item:last-child {
+      border-bottom: none;
+    }
+    
+    .order-item-info {
+      flex: 1;
+    }
+    
+    .order-item-name {
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+    
+    .order-item-details {
+      font-size: 0.9rem;
+      color: var(--muted-text);
+    }
+    
+    .order-item-price {
+      font-weight: bold;
+      color: var(--primary);
+    }
+    
+    .order-totals {
+      margin-top: 20px;
+    }
+    
+    .order-total-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+    
+    .order-total-row.final {
+      font-weight: bold;
+      font-size: 1.3rem;
+      padding-top: 10px;
+      margin-top: 10px;
+      border-top: 2px solid var(--border-color);
+      color: var(--primary);
+    }
+    
+    .free-shipping {
+      color: #27ae60;
+      font-weight: bold;
+    }
+    
+    .checkout-button {
+      width: 100%;
+      background: var(--primary);
+      color: var(--text-light);
+      border: none;
+      padding: 15px;
+      border-radius: 30px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+    }
+    
+    .checkout-button:hover {
+      background: var(--accent);
+    }
+    
+    .checkout-button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .payment-method {
+      background: rgba(139,31,58,0.1);
+      border: 1px solid var(--primary);
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 20px;
+      text-align: center;
+    }
+    
+    .payment-method h4 {
+      margin: 0 0 10px 0;
+      color: var(--primary);
+    }
+    
+    .payment-method p {
+      margin: 0;
+      color: var(--text-dark);
+    }
+    
+    .empty-checkout {
+      text-align: center;
+      padding: 50px 20px;
+      background: var(--secondary);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+    }
+    
+    .empty-checkout h3 {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: 15px;
+    }
+    
+    .empty-checkout p {
+      margin-bottom: 20px;
+      color: var(--text-dark);
+    }
+    
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid var(--background);
+      border-top: 5px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    @media (max-width: 768px) {
+      .checkout-content {
+        grid-template-columns: 1fr;
+      }
+      
+      .checkout-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+      }
+    }
+  </style>
 </head>
 <body>
   <header>
-  <h1>Desi Aura</h1>
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+    <h1>Desi Aura</h1>
+    <nav>
+      <a href="/index.html">Home</a>
+      <a href="/shop.html">Shop</a>
+      <a href="/cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+    </nav>
+  </header>
 
+  <main class="checkout-container">
+    <div class="checkout-header">
+      <h2>Checkout</h2>
+      <a href="/cart.html" class="back-to-cart">← Back to Cart</a>
+    </div>
     
-  </nav>
-</header>
-
-  <main>
-    <h2>Checkout (Cash on Delivery)</h2>
-    <form id="form">
-      <label>Name: <input name="name" required></label><br>
-      <label>Phone: <input name="phone" required></label><br>
-      <label>Email: <input name="email"></label><br>
-      <label>Address: <textarea name="address" required></textarea></label><br>
-      <button type="submit">Place Order (COD)</button>
-    </form>
+    <div id="checkout-content" class="checkout-content">
+      <section class="checkout-form">
+        <form id="checkout-form">
+          <div class="form-section">
+            <h3>Contact Information</h3>
+            <div class="form-group">
+              <label for="name">Full Name *</label>
+              <input type="text" id="name" name="name" required pattern="[A-Za-z\s]+">
+              <div class="error-message" id="name-error">Please enter a valid name (letters only)</div>
+            </div>
+            <div class="form-group">
+              <label for="phone">Phone Number *</label>
+              <input type="tel" id="phone" name="phone" required pattern="[0-9]{10}">
+              <div class="error-message" id="phone-error">Please enter a valid 10-digit phone number</div>
+            </div>
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <input type="email" id="email" name="email" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
+              <div class="error-message" id="email-error">Please enter a valid email address</div>
+              <div class="form-note">We'll send order confirmation to this email</div>
+            </div>
+          </div>
+          
+          <div class="form-section">
+            <h3>Shipping Address</h3>
+            <div class="form-group">
+              <label for="address">Full Address *</label>
+              <textarea id="address" name="address" required placeholder="Enter your complete shipping address including landmark"></textarea>
+              <div class="error-message" id="address-error">Please enter your shipping address</div>
+            </div>
+          </div>
+          
+          <div class="payment-method">
+            <h4>Cash on Delivery</h4>
+            <p>Pay with cash when your order is delivered</p>
+          </div>
+          
+          <button type="submit" class="checkout-button">Place Order</button>
+        </form>
+      </section>
+      
+      <section class="order-summary">
+        <h3>Order Summary</h3>
+        <div id="order-items" class="order-items"></div>
+        <div class="order-totals">
+          <div class="order-total-row">
+            <span>Subtotal:</span>
+            <span id="order-subtotal">₹0</span>
+          </div>
+          <div class="order-total-row">
+            <span>Shipping:</span>
+            <span class="free-shipping">FREE</span>
+          </div>
+          <div class="order-total-row final">
+            <span>Total:</span>
+            <span id="order-total">₹0</span>
+          </div>
+        </div>
+      </section>
+    </div>
   </main>
+
+  <footer>
+    <p>&copy; 2025 Desi Aura. All rights reserved.</p>
+  </footer>
+
   <script src="assets/js/config.js"></script>
   <script src="assets/js/api.js"></script>
   <script src="assets/js/cart.js"></script>
   <script>
-    document.getElementById('form').addEventListener('submit', async function(e){
-      e.preventDefault();
+    // Initialize checkout page
+    document.addEventListener('DOMContentLoaded', function() {
       const cart = loadCart();
-      if (!cart.length) return alert('Cart empty');
-      const form = new FormData(e.target);
-      const payload = {
-        customerName: form.get('name'),
-        customerPhone: form.get('phone'),
-        customerEmail: form.get('email'),
-        address: form.get('address'),
-        items: cart.map(i => ({ productId: i.productId, quantity: i.quantity }))
-      };
-      const res = await API.createOrder(payload);
-      if (res && res.orderId) {
-        clearCart();
-        location.href = `success.html?orderId=${res.orderId}`;
-      } else {
-        alert('Error placing order');
+      const checkoutContent = document.getElementById('checkout-content');
+      const orderItems = document.getElementById('order-items');
+      
+      // Check if cart is empty
+      if (!cart.length) {
+        checkoutContent.innerHTML = `
+          <div class="empty-checkout">
+            <h3>Your cart is empty</h3>
+            <p>You need to add items to your cart before checkout.</p>
+            <a href="/shop.html" class="back-to-cart">Continue Shopping</a>
+          </div>
+        `;
+        return;
       }
+      
+      // Render order items
+      let subtotal = 0;
+      orderItems.innerHTML = cart.map(item => {
+        const itemTotal = item.price * item.quantity;
+        subtotal += itemTotal;
+        
+        return `
+          <div class="order-item">
+            <div class="order-item-info">
+              <div class="order-item-name">${item.name}</div>
+              <div class="order-item-details">Qty: ${item.quantity} × ₹${item.price.toFixed(2)}</div>
+            </div>
+            <div class="order-item-price">₹${itemTotal.toFixed(2)}</div>
+          </div>
+        `;
+      }).join('');
+      
+      // Update totals
+      const shipping = 0; // Free shipping
+      const total = subtotal + shipping;
+      
+      document.getElementById('order-subtotal').innerText = `₹${subtotal.toFixed(2)}`;
+      document.getElementById('order-total').innerText = `₹${total.toFixed(2)}`;
+      
+      // Real-time validation
+      const nameInput = document.getElementById('name');
+      const phoneInput = document.getElementById('phone');
+      const emailInput = document.getElementById('email');
+      const addressInput = document.getElementById('address');
+      
+      // Name validation
+      nameInput.addEventListener('input', function() {
+        const nameError = document.getElementById('name-error');
+        if (!this.value.match(/^[A-Za-z\s]+$/)) {
+          nameError.style.display = 'block';
+        } else {
+          nameError.style.display = 'none';
+        }
+      });
+      
+      // Phone validation
+      phoneInput.addEventListener('input', function() {
+        const phoneError = document.getElementById('phone-error');
+        // Remove non-digit characters
+        this.value = this.value.replace(/\D/g, '');
+        if (this.value.length !== 10) {
+          phoneError.style.display = 'block';
+        } else {
+          phoneError.style.display = 'none';
+        }
+      });
+      
+      // Email validation
+      emailInput.addEventListener('input', function() {
+        const emailError = document.getElementById('email-error');
+        const emailPattern = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+        if (this.value && !emailPattern.test(this.value)) {
+          emailError.style.display = 'block';
+        } else {
+          emailError.style.display = 'none';
+        }
+      });
+      
+      // Address validation
+      addressInput.addEventListener('input', function() {
+        const addressError = document.getElementById('address-error');
+        if (this.value.trim().length < 10) {
+          addressError.style.display = 'block';
+        } else {
+          addressError.style.display = 'none';
+        }
+      });
+      
+      // Handle form submission
+      document.getElementById('checkout-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Validate all fields before submission
+        let isValid = true;
+        
+        // Validate name
+        if (!nameInput.value.match(/^[A-Za-z\s]+$/)) {
+          document.getElementById('name-error').style.display = 'block';
+          isValid = false;
+        }
+        
+        // Validate phone
+        if (phoneInput.value.length !== 10) {
+          document.getElementById('phone-error').style.display = 'block';
+          isValid = false;
+        }
+        
+        // Validate email if provided
+        if (emailInput.value && !/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(emailInput.value)) {
+          document.getElementById('email-error').style.display = 'block';
+          isValid = false;
+        }
+        
+        // Validate address
+        if (addressInput.value.trim().length < 10) {
+          document.getElementById('address-error').style.display = 'block';
+          isValid = false;
+        }
+        
+        if (!isValid) {
+          return;
+        }
+        
+        // Show loading overlay
+        const loadingOverlay = document.createElement('div');
+        loadingOverlay.className = 'loading-overlay';
+        loadingOverlay.innerHTML = '<div class="loading-spinner"></div>';
+        document.body.appendChild(loadingOverlay);
+        
+        try {
+          const form = e.target;
+          const formData = new FormData(form);
+          
+          const payload = {
+            customerName: formData.get('name').trim(),
+            customerPhone: formData.get('phone').trim(),
+            customerEmail: formData.get('email').trim(),
+            address: formData.get('address').trim(),
+            items: cart.map(item => ({
+              productId: item.productId,
+              quantity: item.quantity
+            }))
+          };
+          
+          const res = await API.createOrder(payload);
+          
+          if (res && res.orderId) {
+            clearCart();
+            location.href = `/success.html?orderId=${res.orderId}`;
+          } else {
+            throw new Error('Order creation failed');
+          }
+        } catch (error) {
+          console.error('Error placing order:', error);
+          alert('Error placing order. Please try again.');
+        } finally {
+          // Remove loading overlay
+          if (document.body.contains(loadingOverlay)) {
+            document.body.removeChild(loadingOverlay);
+          }
+        }
+      });
     });
   </script>
-  <footer>
-  <p>&copy; 2025 Desi Aura. All rights reserved.</p>
-</footer>
-
 </body>
 </html>

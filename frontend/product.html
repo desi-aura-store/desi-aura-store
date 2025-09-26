@@ -5,14 +5,189 @@
   <title>Product — Desi Aura</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    /* Add these styles for pricing display */
+    .price-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+    }
+
+    .original-price {
+      text-decoration: line-through;
+      color: #888;
+      font-size: 0.9rem;
+    }
+
+    .current-price {
+      font-weight: bold;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .discount-badge {
+      background: var(--accent);
+      color: white;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+    }
+    
+    /* Product gallery styles for single image display */
+    .product-gallery {
+      position: relative;
+      margin-bottom: 30px;
+    }
+    
+    .gallery-stage {
+      position: relative;
+      overflow: hidden;
+      border-radius: 12px;
+      background: #f5f5f5;
+    }
+    
+    .gallery-track {
+      display: flex;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+    
+    .slide {
+      flex: 0 0 100%;
+      scroll-snap-align: start;
+      position: relative;
+    }
+    
+    .slide img {
+      width: 100%;
+      height: 500px;
+      object-fit: contain;
+      display: block;
+    }
+    
+    .g-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.8);
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .g-arrow:hover {
+      background: rgba(255, 255, 255, 0.95);
+    }
+    
+    .g-arrow.left {
+      left: 10px;
+    }
+    
+    .g-arrow.right {
+      right: 10px;
+    }
+    
+    .gallery-thumbs {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      overflow-x: auto;
+      padding: 10px 0;
+    }
+    
+    .thumb {
+      flex: 0 0 auto;
+      width: 80px;
+      height: 80px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.3s;
+    }
+    
+    .thumb.active {
+      border-color: var(--primary);
+    }
+    
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .gallery-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 15px;
+    }
+    
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ccc;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    .dot.active {
+      background: var(--primary);
+    }
+    
+    /* Product description formatting */
+    .p-desc {
+      white-space: pre-line;
+      line-height: 1.6;
+      margin: 20px 0;
+    }
+    
+    .p-desc h3 {
+      margin: 20px 0 10px 0;
+      color: var(--primary);
+    }
+    
+    .p-desc ul {
+      padding-left: 20px;
+      margin: 15px 0;
+    }
+    
+    .p-desc li {
+      margin-bottom: 8px;
+    }
+    
+    .p-desc strong {
+      color: var(--primary);
+    }
+    
+    .product-meta {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid var(--border-color);
+      color: var(--muted-text);
+    }
+  </style>
 </head>
 <body>
   <header>
     <h1>Desi Aura</h1>
     <nav>
-      <a href="index.html">Home</a>
-      <a href="shop.html">Shop</a>
-      <a href="cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+      <a href="/index.html">Home</a>
+      <a href="/shop.html">Shop</a>
+      <a href="/cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
     </nav>
   </header>
 
@@ -36,7 +211,7 @@
     <section class="product-details" id="product-details">
       <!-- product info injected here -->
       <h2 id="p-name">Loading…</h2>
-      <p id="p-price"></p>
+      <div id="p-price"></div>
       <div id="p-desc" class="p-desc"></div>
 
       <div class="product-actions">
@@ -60,6 +235,17 @@
 
   <script>
   (async function(){
+    // Debug logging
+    console.log('Product page script loaded');
+    console.log('Current URL:', window.location.href);
+    
+    // Check if we're on the correct page
+    if (!window.location.pathname.includes('product.html')) {
+      console.error('Not on product.html page');
+      window.location.href = '/index.html';
+      return;
+    }
+    
     // Utilities
     const qs = new URLSearchParams(location.search);
     const id = qs.get('id');
@@ -73,54 +259,130 @@
     const addBtn = document.getElementById('add-to-cart');
     const buyBtn = document.getElementById('buy-now');
 
-    if (!id) {
-      nameEl.textContent = 'No product id';
+    // Debug logging
+    console.log('Product ID from URL:', id);
+    console.log('API Base URL:', window.API_BASE_URL);
+
+    // Check if all required elements exist
+    if (!nameEl || !priceEl || !descEl || !qtyEl || !addBtn || !buyBtn) {
+      console.error('Required DOM elements not found');
+      nameEl.textContent = 'Page not loaded correctly';
       return;
     }
 
+    if (!id) {
+      console.error('No product ID found in URL');
+      nameEl.textContent = 'No product ID provided';
+      descEl.textContent = 'Please select a product from the shop.';
+      return;
+    }
+
+    // Show loading state
+    nameEl.textContent = 'Loading product...';
+    priceEl.innerHTML = '<div class="price-container"><span class="current-price">Loading...</span></div>';
+    descEl.innerHTML = '<p>Loading product details...</p>';
+
     try {
+      console.log('Fetching product from API...');
       const p = await API.getProduct(id);
-      if (!p || p.error) throw new Error('Product not found');
+      console.log('Product data received:', p);
+      
+      if (!p || p.error) {
+        console.error('Product not found or API returned error:', p);
+        throw new Error(p.error || 'Product not found');
+      }
 
       // normalize images: prefer p.images array, otherwise parse p.image
       let images = [];
-      if (Array.isArray(p.images) && p.images.length) images = p.images.slice();
-      else if (typeof p.image === 'string' && p.image.trim()) {
-        if (p.image.includes(',')) images = p.image.split(',').map(s=>s.trim()).filter(Boolean);
-        else if (p.image.includes('|')) images = p.image.split('|').map(s=>s.trim()).filter(Boolean);
-        else images = [p.image.trim()];
+      if (Array.isArray(p.images) && p.images.length) {
+        images = p.images.slice();
+      } else if (typeof p.image === 'string' && p.image.trim()) {
+        if (p.image.includes(',')) {
+          images = p.image.split(',').map(s => s.trim()).filter(Boolean);
+        } else if (p.image.includes('|')) {
+          images = p.image.split('|').map(s => s.trim()).filter(Boolean);
+        } else {
+          images = [p.image.trim()];
+        }
       } else {
         images = ['placeholder.jpg']; // fallback (ensure placeholder exists)
       }
+      
+      console.log('Product images:', images);
 
       // render product info
-      nameEl.textContent = p.name;
-      priceEl.textContent = `₹${Number(p.price).toFixed(2)}`;
-      descEl.innerHTML = `<p>${p.description || ''}</p>`;
-      document.getElementById('product-meta').innerHTML = `<small>Category: ${p.category || '—'} • Stock: ${p.stock ?? '—'}</small>`;
+      nameEl.textContent = p.name || 'Unnamed Product';
+      
+      // Calculate discount percentage if original price exists
+      const originalPrice = p.originalPrice ? Number(p.originalPrice) : null;
+      const currentPrice = Number(p.price) || 0;
+      const discountPercent = originalPrice ? Math.round((1 - currentPrice / originalPrice) * 100) : 0;
+      
+      console.log('Price info:', { originalPrice, currentPrice, discountPercent });
+      
+      // Update price display with both original and current prices
+      if (originalPrice && originalPrice > currentPrice) {
+        priceEl.innerHTML = `
+          <div class="price-container">
+            <span class="original-price">₹${originalPrice.toFixed(2)}</span>
+            <span class="current-price">₹${currentPrice.toFixed(2)}</span>
+            <span class="discount-badge">${discountPercent}% OFF</span>
+          </div>
+        `;
+      } else {
+        priceEl.innerHTML = `
+          <div class="price-container">
+            <span class="current-price">₹${currentPrice.toFixed(2)}</span>
+          </div>
+        `;
+      }
+      
+      // Format description with proper line breaks and structure
+      descEl.innerHTML = p.description || 'No description available.';
+      
+      document.getElementById('product-meta').innerHTML = 
+        `<small>Category: ${p.category || '—'} • Stock: ${p.stock ?? '—'}</small>`;
 
       // build slides
       rootTrack.innerHTML = '';
       thumbsRoot.innerHTML = '';
       dotsRoot.innerHTML = '';
 
+      if (images.length === 0) {
+        images.push('placeholder.jpg');
+      }
+
       images.forEach((img, idx) => {
+        // Create slide
         const slide = document.createElement('div');
         slide.className = 'slide';
         slide.dataset.index = idx;
         slide.innerHTML = `<img src="/images/${img}" alt="${p.name} - ${idx+1}">`;
         rootTrack.appendChild(slide);
 
+        // Create thumbnail
         const thumb = document.createElement('button');
         thumb.className = 'thumb';
         thumb.dataset.index = idx;
         thumb.innerHTML = `<img src="/images/${img}" alt="thumb ${idx+1}">`;
         thumbsRoot.appendChild(thumb);
 
+        // Create dot
         const dot = document.createElement('button');
         dot.className = 'dot';
         dot.dataset.index = idx;
         dotsRoot.appendChild(dot);
+      });
+
+      // Add error handling for images after they're added to DOM
+      document.querySelectorAll('.slide img, .thumb img').forEach(img => {
+        img.addEventListener('error', function() {
+          // Only replace with placeholder once
+          if (!this.dataset.replaced) {
+            this.src = '/images/placeholder.jpg';
+            this.dataset.replaced = 'true';
+          }
+        });
       });
 
       // Simple gallery mechanics
@@ -130,80 +392,109 @@
       const dots = Array.from(dotsRoot.children);
 
       function updateUI(to) {
+        console.log('Updating gallery to slide:', to);
         current = to;
-        // scroll track so that slide is centered (uses scroll snap)
-        const slideEl = slides[to];
-        if (slideEl) slideEl.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+        
+        // Ensure index is valid
+        to = Math.max(0, Math.min(to, slides.length - 1));
+        
+        // Calculate the scroll position
+        const slideWidth = slides[0].offsetWidth;
+        rootTrack.scrollLeft = slideWidth * to;
+        
         // highlight thumb & dot
         thumbs.forEach(t => t.classList.toggle('active', Number(t.dataset.index) === to));
         dots.forEach(d => d.classList.toggle('active', Number(d.dataset.index) === to));
       }
 
       // initial highlight
-      updateUI(0);
+      if (slides.length > 0) {
+        updateUI(0);
+      }
 
       // arrows
-      document.querySelectorAll('.g-arrow.left, .g-arrow.right').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          if (btn.classList.contains('left')) updateUI(Math.max(0, current - 1));
-          else updateUI(Math.min(slides.length - 1, current + 1));
+      const leftArrow = document.querySelector('.g-arrow.left');
+      const rightArrow = document.querySelector('.g-arrow.right');
+      
+      if (leftArrow) {
+        leftArrow.addEventListener('click', () => {
+          updateUI(Math.max(0, current - 1));
+        });
+      }
+      
+      if (rightArrow) {
+        rightArrow.addEventListener('click', () => {
+          updateUI(Math.min(slides.length - 1, current + 1));
+        });
+      }
+
+      // thumbs click
+      thumbs.forEach(t => {
+        t.addEventListener('click', () => {
+          updateUI(Number(t.dataset.index));
         });
       });
 
-      // thumbs click
-      thumbs.forEach(t => t.addEventListener('click', () => updateUI(Number(t.dataset.index))));
-
       // dots click
-      dots.forEach(d => d.addEventListener('click', () => updateUI(Number(d.dataset.index))));
-
-      // track scroll -> set "current" when snapping finished
-      let scrollTimer;
-      rootTrack.addEventListener('scroll', () => {
-        clearTimeout(scrollTimer);
-        scrollTimer = setTimeout(() => {
-          // find the slide closest to center
-          const centerX = rootTrack.scrollLeft + (rootTrack.clientWidth / 2);
-          let best = 0; let bestDiff = Infinity;
-          slides.forEach((s, i) => {
-            const rect = s.getBoundingClientRect();
-            const sLeft = s.offsetLeft;
-            const sCenter = sLeft + (s.offsetWidth / 2);
-            const diff = Math.abs(sCenter - centerX);
-            if (diff < bestDiff) { bestDiff = diff; best = i; }
-          });
-          updateUI(best);
-        }, 120);
+      dots.forEach(d => {
+        d.addEventListener('click', () => {
+          updateUI(Number(d.dataset.index));
+        });
       });
 
       // keyboard left/right
-      rootTrack.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowLeft') updateUI(Math.max(0, current - 1));
-        if (e.key === 'ArrowRight') updateUI(Math.min(slides.length - 1, current + 1));
-      });
+      if (rootTrack) {
+        rootTrack.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowLeft') updateUI(Math.max(0, current - 1));
+          if (e.key === 'ArrowRight') updateUI(Math.min(slides.length - 1, current + 1));
+        });
+      }
 
       // Add to cart / Buy now wiring
-      addBtn.addEventListener('click', () => {
-        const qty = Math.max(1, Number(qtyEl.value) || 1);
-        addToCart(Number(p.id), p.name, Number(p.price), qty);
-        // show ephemeral feedback
-        addBtn.textContent = 'Added ✓';
-        setTimeout(()=> addBtn.textContent = 'Add to cart', 900);
-      });
+      if (addBtn && buyBtn && qtyEl) {
+        addBtn.addEventListener('click', () => {
+          console.log('Add to cart clicked');
+          const qty = Math.max(1, Number(qtyEl.value) || 1);
+          console.log('Adding to cart:', { id: p.id, name: p.name, price: p.price, qty });
+          
+          // Check if addToCart function exists
+          if (typeof addToCart === 'function') {
+            addToCart(Number(p.id), p.name, Number(p.price), qty);
+            // show ephemeral feedback
+            const originalText = addBtn.textContent;
+            addBtn.textContent = 'Added ✓';
+            addBtn.disabled = true;
+            setTimeout(() => {
+              addBtn.textContent = originalText;
+              addBtn.disabled = false;
+            }, 900);
+          } else {
+            console.error('addToCart function not available');
+          }
+        });
 
-      buyBtn.addEventListener('click', () => {
-        const qty = Math.max(1, Number(qtyEl.value) || 1);
-        addToCart(Number(p.id), p.name, Number(p.price), qty);
-        // redirect to checkout (your flow)
-        location.href = 'checkout.html';
-      });
+        buyBtn.addEventListener('click', () => {
+          console.log('Buy now clicked');
+          const qty = Math.max(1, Number(qtyEl.value) || 1);
+          console.log('Buying now:', { id: p.id, name: p.name, price: p.price, qty });
+          
+          // Check if addToCart function exists
+          if (typeof addToCart === 'function') {
+            addToCart(Number(p.id), p.name, Number(p.price), qty);
+            // redirect to checkout (your flow)
+            window.location.href = '/checkout.html';
+          } else {
+            console.error('addToCart function not available');
+          }
+        });
+      }
 
     } catch (err) {
-      console.error(err);
-      nameEl.textContent = 'Product not found';
-      descEl.textContent = '';
+      console.error('Error loading product:', err);
+      nameEl.textContent = 'Error loading product';
+      descEl.textContent = err.message || 'An error occurred while loading the product.';
     }
   })();
-  </script>
-
+</script>
 </body>
 </html>

@@ -9,16 +9,15 @@
   <script src="assets/js/api.js" defer></script>
   <script src="assets/js/cart.js"></script>
   <script src="assets/js/product-ui.js" defer></script>
-
+  <script src="assets/js/router.js"></script>
 </head>
   <body>
   <header>
     <h1>Desi Aura</h1>
     <nav>
-      <a href="index.html">Home</a>
-      <a href="shop.html">Shop</a>
-      <a href="cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
-
+      <a href="/index.html">Home</a>
+      <a href="/shop.html">Shop</a>
+      <a href="/cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
     </nav>
   </header>
 
@@ -64,7 +63,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const res = await fetch(`${window.API_BASE_URL}/products?limit=${limit}&offset=${offset}`, { cache: 'no-store' });
+      // Get category from URL if present
+      const urlParams = new URLSearchParams(window.location.search);
+      const category = urlParams.get('category');
+      
+      let apiUrl = `${window.API_BASE_URL}/products?limit=${limit}&offset=${offset}`;
+      if (category) {
+        apiUrl += `&category=${category}`;
+      }
+      
+      const res = await fetch(apiUrl, { cache: 'no-store' });
       if (!res.ok) throw new Error('API error ' + res.status);
       const products = await res.json();
 
@@ -78,12 +86,18 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      // Update the product card creation in shop.html
       products.forEach(p => {
         const card = document.createElement('div');
         card.className = 'product-card fade-in';
+        
+        // Calculate discount percentage if original price exists
+        const discountPercent = p.originalPrice ? 
+          Math.round((1 - p.price / p.originalPrice) * 100) : 0;
+        
         card.innerHTML = `
           <div class="image-wrap">
-            <a class="product-link" href="product.html?id=${p.id}" aria-label="${p.name}">
+            <a class="product-link" href="/product.html?id=${p.id}" aria-label="${p.name}">
               <img src="/images/${ firstImage(p) }" alt="${p.name}">
             </a>
             <div class="actions">
@@ -93,7 +107,11 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <div class="product-info">
             <h3>${p.name}</h3>
-            <p>₹${p.price}</p>
+            <div class="price-container">
+              ${p.originalPrice ? `<span class="original-price">₹${p.originalPrice}</span>` : ''}
+              <span class="current-price">₹${p.price}</span>
+              ${discountPercent > 0 ? `<span class="discount-badge">${discountPercent}% OFF</span>` : ''}
+            </div>
           </div>
         `;
         shopContainer.appendChild(card);
@@ -125,8 +143,5 @@ document.addEventListener("DOMContentLoaded", () => {
   // NOTE: Add/Buy click handling and touch reveal are handled by assets/js/product-ui.js
 });
 </script>
-
-
-
 </body>
 </html>

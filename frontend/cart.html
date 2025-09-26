@@ -3,59 +3,406 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1"> 
-  <title>Cart</title>
+  <title>Cart — Desi Aura</title>
   <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    /* Cart-specific styles */
+    .cart-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .cart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--border-color);
+    }
+    
+    .cart-header h2 {
+      font-size: 1.8rem;
+      color: var(--primary);
+    }
+    
+    .continue-shopping {
+      background: var(--background);
+      color: var(--primary);
+      border: 2px solid var(--primary);
+      padding: 10px 20px;
+      border-radius: 30px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .continue-shopping:hover {
+      background: var(--primary);
+      color: var(--text-light);
+    }
+    
+    .cart-items {
+      display: grid;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .cart-item {
+      display: grid;
+      grid-template-columns: 100px 1fr auto auto auto;
+      gap: 20px;
+      align-items: center;
+      background: var(--background);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 15px;
+      transition: transform 0.2s ease;
+    }
+    
+    .cart-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(139,31,58,0.1);
+    }
+    
+    .cart-item-image {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+    
+    .cart-item-details h3 {
+      margin: 0 0 5px 0;
+      font-size: 1.1rem;
+      color: var(--primary);
+    }
+    
+    .cart-item-price {
+      font-weight: bold;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+    
+    .quantity-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .quantity-btn {
+      background: var(--primary);
+      color: var(--text-light);
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    
+    .quantity-btn:hover {
+      background: var(--accent);
+    }
+    
+    .quantity-display {
+      min-width: 30px;
+      text-align: center;
+      font-weight: bold;
+    }
+    
+    .remove-btn {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    
+    .remove-btn:hover {
+      background: #c0392b;
+    }
+    
+    .cart-summary {
+      background: var(--secondary);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 25px;
+      max-width: 400px;
+      margin-left: auto;
+    }
+    
+    .cart-summary h2 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: var(--primary);
+      font-size: 1.5rem;
+      text-align: center;
+    }
+    
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+    }
+    
+    .summary-row.total {
+      font-weight: bold;
+      font-size: 1.3rem;
+      padding-top: 15px;
+      margin-top: 15px;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .free-shipping {
+      color: #27ae60;
+      font-weight: bold;
+    }
+    
+    .checkout-btn {
+      display: block;
+      width: 100%;
+      background: var(--primary);
+      color: var(--text-light);
+      border: none;
+      padding: 15px;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+    }
+    
+    .checkout-btn:hover {
+      background: var(--accent);
+    }
+    
+    .empty-cart {
+      text-align: center;
+      padding: 50px 20px;
+      background: var(--secondary);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+    }
+    
+    .empty-cart h3 {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: 15px;
+    }
+    
+    .empty-cart p {
+      margin-bottom: 20px;
+      color: var(--text-dark);
+    }
+    
+    .loading-spinner {
+      display: block;
+      width: 40px;
+      height: 40px;
+      margin: 20px auto;
+      border: 4px solid rgba(139,31,58,0.1);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    @media (max-width: 768px) {
+      .cart-item {
+        grid-template-columns: 80px 1fr;
+        gap: 15px;
+      }
+      
+      .cart-item-image {
+        width: 80px;
+        height: 80px;
+      }
+      
+      .cart-item-details {
+        grid-column: 1 / -1;
+      }
+      
+      .cart-item-price,
+      .quantity-controls,
+      .remove-btn {
+        grid-column: 2;
+        justify-self: end;
+      }
+      
+      .cart-summary {
+        max-width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
   <header>
-  <h1>Desi Aura</h1>
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+    <h1>Desi Aura</h1>
+    <nav>
+      <a href="/index.html">Home</a>
+      <a href="/shop.html">Shop</a>
+      <a href="/cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+    </nav>
+  </header>
 
-  </nav>
-</header>
-
-  <main>
-    <h2>Your Cart</h2>
-   <div id="cart"></div>
+  <main class="cart-container">
+    <div class="cart-header">
+      <h2>Your Shopping Cart</h2>
+      <a href="/shop.html" class="continue-shopping">Continue Shopping</a>
+    </div>
+    
+    <div id="cart" class="cart-items">
+      <div class="loading-spinner"></div>
+    </div>
+    
+    <section class="cart-summary">
+      <h2>Order Summary</h2>
+      <div class="summary-row">
+        <span>Subtotal:</span>
+        <span id="cart-subtotal">₹0</span>
+      </div>
+      <div class="summary-row">
+        <span>Shipping:</span>
+        <span id="cart-shipping" class="free-shipping">FREE</span>
+      </div>
+      <div class="summary-row total">
+        <span>Total:</span>
+        <span id="cart-total">₹0</span>
+      </div>
+      <a href="/checkout.html" class="checkout-btn">Proceed to Checkout</a>
+    </section>
   </main>
-  <section class="cart-summary">
-  <h2>Order Summary</h2>
-  <p>Total: <span id="cart-total">₹0</span></p>
-  <a href="checkout.html">
-    <button>Proceed to Checkout</button>
-  </a>
-</section>
 
+  <footer>
+    <p>&copy; 2025 Desi Aura. All rights reserved.</p>
+  </footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/api.js"></script>
   <script src="assets/js/cart.js"></script>
   <script>
-    function render() {
-    const cart = loadCart();
-    const root = document.getElementById('cart');
-    if (!cart.length) {
-      root.innerHTML = '<p>Cart is empty</p>';
-      document.getElementById('cart-total').innerText = '₹0.00';
-      return;
+    async function render() {
+      const cart = loadCart();
+      const root = document.getElementById('cart');
+      
+      if (!cart.length) {
+        root.innerHTML = `
+          <div class="empty-cart">
+            <h3>Your cart is empty</h3>
+            <p>Looks like you haven't added any items to your cart yet.</p>
+            <a href="/shop.html" class="continue-shopping">Start Shopping</a>
+          </div>
+        `;
+        document.getElementById('cart-subtotal').innerText = '₹0.00';
+        document.getElementById('cart-shipping').innerText = 'FREE';
+        document.getElementById('cart-total').innerText = '₹0.00';
+        return;
+      }
+      
+      // Fetch product details for each item in cart to get images
+      const cartWithImages = await Promise.all(cart.map(async (item) => {
+        try {
+          const product = await API.getProduct(item.productId);
+          return {
+            ...item,
+            image: firstImage(product)
+          };
+        } catch (error) {
+          console.error(`Failed to fetch product ${item.productId}:`, error);
+          return {
+            ...item,
+            image: 'placeholder.jpg'
+          };
+        }
+      }));
+      
+      root.innerHTML = cartWithImages.map(item => {
+        // Calculate item total
+        const itemTotal = item.price * item.quantity;
+        
+        return `
+          <div class="cart-item">
+            <img src="/images/${item.image}" alt="${item.name}" class="cart-item-image">
+            <div class="cart-item-details">
+              <h3>${item.name}</h3>
+            </div>
+            <div class="cart-item-price">₹${item.price.toFixed(2)}</div>
+            <div class="quantity-controls">
+              <button class="quantity-btn" data-id="${item.productId}" data-action="decrease">-</button>
+              <span class="quantity-display">${item.quantity}</span>
+              <button class="quantity-btn" data-id="${item.productId}" data-action="increase">+</button>
+            </div>
+            <button class="remove-btn" data-id="${item.productId}">Remove</button>
+          </div>
+        `;
+      }).join('');
+      
+      // Add error handling for images after they're added to DOM
+      document.querySelectorAll('.cart-item-image').forEach(img => {
+        img.addEventListener('error', function() {
+          // Only replace with placeholder once
+          if (!this.dataset.replaced) {
+            this.src = '/images/placeholder.jpg';
+            this.dataset.replaced = 'true';
+          }
+        });
+      });
+      
+      // Calculate totals
+      const subtotal = getCartTotal();
+      const shipping = 0; // Free shipping for all orders
+      const total = subtotal + shipping; // No tax
+      
+      // Update summary
+      document.getElementById('cart-subtotal').innerText = `₹${subtotal.toFixed(2)}`;
+      document.getElementById('cart-shipping').innerText = 'FREE';
+      document.getElementById('cart-total').innerText = `₹${total.toFixed(2)}`;
+      
+      // Add event listeners
+      root.querySelectorAll('.quantity-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          const id = Number(e.target.dataset.id);
+          const action = e.target.dataset.action;
+          const item = cart.find(i => i.productId === id);
+          
+          if (item) {
+            if (action === 'increase') {
+              item.quantity += 1;
+            } else if (action === 'decrease' && item.quantity > 1) {
+              item.quantity -= 1;
+            }
+            saveCart(cart);
+            render();
+          }
+        });
+      });
+      
+      root.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          removeFromCart(Number(e.target.dataset.id));
+          render();
+        });
+      });
     }
-    root.innerHTML = cart.map(i => `
-      <div>
-        <strong>${i.name}</strong> — ${i.quantity} × ₹${i.price.toFixed(2)}
-        <button data-id="${i.productId}" class="remove">Remove</button>
-      </div>
-    `).join('');
-    document.getElementById('cart-total').innerText = '₹' + getCartTotal().toFixed(2);
-    root.querySelectorAll('.remove').forEach(btn =>
-      btn.addEventListener('click', e => { removeFromCart(Number(e.target.dataset.id)); render(); })
-    );
-  }
-  render();
-  </script>
-  <p>Total: <span id="cart-total">₹0</span></p>
-  <footer>
     
-  <p>&copy; 2025 Desi Aura. All rights reserved.</p>
-</footer>
-
+    render();
+  </script>
 </body>
 </html>

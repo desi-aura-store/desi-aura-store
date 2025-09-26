@@ -17,12 +17,11 @@ if (process.env.DATABASE_URL) {
   // Local dev: SQLite file
   const path = require('path');
 
-sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: path.join(__dirname, 'database.sqlite'),  // ✅ always backend/database.sqlite
-  logging: false
-});
-
+  sequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: path.join(__dirname, 'database.sqlite'),  // ✅ always backend/database.sqlite
+    logging: false
+  });
 }
 
 const Product = sequelize.define('Product', {
@@ -34,6 +33,7 @@ const Product = sequelize.define('Product', {
   name: { type: DataTypes.STRING, allowNull: false },   // ✅ renamed from "title"
   description: { type: DataTypes.TEXT, allowNull: false },
   price: { type: DataTypes.FLOAT, allowNull: false },
+  originalPrice: { type: DataTypes.FLOAT, allowNull: true }, // ✅ Added originalPrice field
   category: { type: DataTypes.STRING, allowNull: false },
   image: { type: DataTypes.STRING, allowNull: false },
   stock: { type: DataTypes.INTEGER, defaultValue: 100 }

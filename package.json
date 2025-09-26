@@ -1,0 +1,24 @@
+{
+  "name": "desi-aura",
+  "version": "1.0.0",
+  "description": "Desi Aura E-commerce Platform",
+  "main": "dev.js",
+  "engines": {
+    "node": "18.x || 20.x"
+  },
+  "scripts": {
+    "dev": "node dev.js",
+    "start": "node dev.js",
+    "backend": "cd backend && npm start",
+    "seed": "cd backend && npm run seed"
+  },
+  "keywords": [
+    "ecommerce",
+    "clothing",
+    "desi-wear",
+    "nodejs",
+    "express"
+  ],
+  "author": "Your Name",
+  "license": "ISC"
+}

@@ -3,21 +3,252 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1"> 
-  <title>Success</title>
+  <title>Order Success — Desi Aura</title>
   <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    /* Success page specific styles */
+    .success-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .success-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background: #27ae60;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+    
+    .success-icon::before {
+      content: '✓';
+      color: white;
+      font-size: 40px;
+      font-weight: bold;
+    }
+    
+    .success-title {
+      font-size: 2rem;
+      color: var(--primary);
+      margin: 0 0 10px 0;
+    }
+    
+    .success-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-dark);
+      margin: 0;
+    }
+    
+    .order-details {
+      background: var(--background);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 30px;
+    }
+    
+    .order-number {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin: 0 0 20px 0;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--border-color);
+    }
+    
+    .order-section {
+      margin-bottom: 25px;
+    }
+    
+    .order-section h3 {
+      font-size: 1.3rem;
+      color: var(--primary);
+      margin: 0 0 15px 0;
+    }
+    
+    .order-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    
+    .info-item {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .info-label {
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 5px;
+    }
+    
+    .info-value {
+      color: var(--muted-text);
+    }
+    
+    .order-items {
+      margin-top: 20px;
+    }
+    
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .order-item:last-child {
+      border-bottom: none;
+    }
+    
+    .order-item-details {
+      flex: 1;
+    }
+    
+    .order-item-name {
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 5px;
+    }
+    
+    .order-item-quantity {
+      font-size: 0.9rem;
+      color: var(--muted-text);
+    }
+    
+    .order-item-price {
+      font-weight: bold;
+      color: var(--primary);
+    }
+    
+    .order-summary {
+      background: var(--secondary);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 25px;
+      margin-top: 30px;
+    }
+    
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+    
+    .summary-row.total {
+      font-weight: bold;
+      font-size: 1.3rem;
+      padding-top: 15px;
+      margin-top: 15px;
+      border-top: 2px solid var(--border-color);
+      color: var(--primary);
+    }
+    
+    .free-shipping {
+      color: #27ae60;
+      font-weight: bold;
+    }
+    
+    .actions {
+      text-align: center;
+      margin-top: 40px;
+    }
+    
+    .continue-shopping {
+      background: var(--primary);
+      color: var(--text-light);
+      border: none;
+      padding: 15px 30px;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s ease;
+    }
+    
+    .continue-shopping:hover {
+      background: var(--accent);
+    }
+    
+    .order-status {
+      display: inline-block;
+      background: #27ae60;
+      color: white;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-left: 15px;
+    }
+    
+    .empty-order {
+      text-align: center;
+      padding: 50px 20px;
+      background: var(--secondary);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+    }
+    
+    .empty-order h3 {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: 15px;
+    }
+    
+    .empty-order p {
+      margin-bottom: 20px;
+      color: var(--text-dark);
+    }
+    
+    @media (max-width: 768px) {
+      .order-info {
+        grid-template-columns: 1fr;
+      }
+      
+      .order-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      
+      .order-item-price {
+        align-self: flex-end;
+      }
+    }
+  </style>
 </head>
 <body>
   <header>
-  <h1>Desi Aura</h1>
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+    <h1>Desi Aura</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="shop.html">Shop</a>
+      <a href="cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+    </nav>
+  </header>
 
-    
-  </nav>
-</header>
+  <main class="success-container">
+    <div id="success-content">
+      <!-- Content will be dynamically loaded here -->
+    </div>
+  </main>
 
-  <main id="main"></main>
+  <footer>
+    <p>&copy; 2025 Desi Aura. All rights reserved.</p>
+  </footer>
 
   <script src="assets/js/config.js"></script>
   <script src="assets/js/api.js"></script>
@@ -25,21 +256,126 @@
     (async function(){
       const params = new URLSearchParams(location.search);
       const id = params.get('orderId');
-      if (!id) { document.getElementById('main').innerText = 'No order ID'; return; }
-      const data = await API.getOrder(id);
-      if (data.error) { document.getElementById('main').innerText = 'Order not found'; return; }
-      document.getElementById('main').innerHTML = `
-        <h2>Thank you! Order #${data.id}</h2>
-        <p>Name: ${data.customerName}</p>
-        <p>Total: $${Number(data.total).toFixed(2)}</p>
-        <h3>Items</h3>
-        ${data.items.map(i => `<div>${i.quantity}x ${i.name} — $${i.lineTotal.toFixed(2)}</div>`).join('')}
-      `;
+      const successContent = document.getElementById('success-content');
+      
+      if (!id) {
+        successContent.innerHTML = `
+          <div class="empty-order">
+            <h3>Order Not Found</h3>
+            <p>We couldn't find your order. Please check your order number or contact support.</p>
+            <a href="index.html" class="continue-shopping">Go to Homepage</a>
+          </div>
+        `;
+        return;
+      }
+      
+      try {
+        const data = await API.getOrder(id);
+        
+        if (data.error) {
+          successContent.innerHTML = `
+            <div class="empty-order">
+              <h3>Order Not Found</h3>
+              <p>We couldn't find your order. Please check your order number or contact support.</p>
+              <a href="index.html" class="continue-shopping">Go to Homepage</a>
+            </div>
+          `;
+          return;
+        }
+        
+        // Calculate subtotal
+        const subtotal = data.items.reduce((sum, item) => sum + item.lineTotal, 0);
+        
+        successContent.innerHTML = `
+          <div class="success-header">
+            <div class="success-icon"></div>
+            <h1 class="success-title">Order Confirmed!</h1>
+            <p class="success-subtitle">Thank you for your purchase. We've received your order.</p>
+          </div>
+          
+          <div class="order-details">
+            <h2 class="order-number">
+              Order #${data.id}
+              <span class="order-status">${data.status || 'Processing'}</span>
+            </h2>
+            
+            <div class="order-section">
+              <h3>Customer Information</h3>
+              <div class="order-info">
+                <div class="info-item">
+                  <span class="info-label">Name</span>
+                  <span class="info-value">${data.customerName}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Phone</span>
+                  <span class="info-value">${data.customerPhone || 'Not provided'}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Email</span>
+                  <span class="info-value">${data.customerEmail || 'Not provided'}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Order Date</span>
+                  <span class="info-value">${new Date(data.createdAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="order-section">
+              <h3>Shipping Address</h3>
+              <p class="info-value">${data.address}</p>
+            </div>
+            
+            <div class="order-section">
+              <h3>Order Items</h3>
+              <div class="order-items">
+                ${data.items.map(item => `
+                  <div class="order-item">
+                    <div class="order-item-details">
+                      <div class="order-item-name">${item.name}</div>
+                      <div class="order-item-quantity">Quantity: ${item.quantity}</div>
+                    </div>
+                    <div class="order-item-price">₹${item.lineTotal.toFixed(2)}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            
+            <div class="order-summary">
+              <h3>Order Summary</h3>
+              <div class="summary-row">
+                <span>Subtotal:</span>
+                <span>₹${subtotal.toFixed(2)}</span>
+              </div>
+              <div class="summary-row">
+                <span>Shipping:</span>
+                <span class="free-shipping">FREE</span>
+              </div>
+              <div class="summary-row total">
+                <span>Total:</span>
+                <span>₹${Number(data.total).toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="actions">
+            <a href="shop.html" class="continue-shopping">Continue Shopping</a>
+          </div>
+        `;
+        
+      } catch (error) {
+        console.error('Error fetching order:', error);
+        successContent.innerHTML = `
+          <div class="empty-order">
+            <h3>Error Loading Order</h3>
+            <p>We encountered an error while loading your order details. Please try again later.</p>
+            <a href="index.html" class="continue-shopping">Go to Homepage</a>
+          </div>
+        `;
+      }
     })();
-  </script>
-  <footer>
-  <p>&copy; 2025 Desi Aura. All rights reserved.</p>
-</footer>
 
+    
+  </script>
 </body>
 </html>
