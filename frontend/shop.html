@@ -67,12 +67,21 @@ document.addEventListener("DOMContentLoaded", () => {
       const urlParams = new URLSearchParams(window.location.search);
       const category = urlParams.get('category');
       
-      let apiUrl = `${window.API_BASE_URL}/products?limit=${limit}&offset=${offset}`;
+      // FIX: Add /api to the URL
+      let apiUrl = `${window.API_BASE_URL}/api/products?limit=${limit}&offset=${offset}`;
       if (category) {
         apiUrl += `&category=${category}`;
       }
       
-      const res = await fetch(apiUrl, { cache: 'no-store' });
+      console.log('Fetching products from:', apiUrl);
+      
+      const res = await fetch(apiUrl, { 
+        cache: 'no-store',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
       if (!res.ok) throw new Error('API error ' + res.status);
       const products = await res.json();
 
@@ -95,10 +104,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const discountPercent = p.originalPrice ? 
           Math.round((1 - p.price / p.originalPrice) * 100) : 0;
         
+        // Get the first image from comma-separated list
+        const imageArray = p.image ? p.image.split(',') : [];
+        const firstImageSrc = imageArray.length > 0 ? imageArray[0].trim() : 'placeholder.jpg';
+        
         card.innerHTML = `
           <div class="image-wrap">
             <a class="product-link" href="/product.html?id=${p.id}" aria-label="${p.name}">
-              <img src="/images/${ firstImage(p) }" alt="${p.name}">
+              <img src="/images/${firstImageSrc}" alt="${p.name}" onerror="this.src='/images/placeholder.jpg'">
             </a>
             <div class="actions">
               <button class="add-btn" data-id="${p.id}" data-name="${encodeURIComponent(p.name)}" data-price="${p.price}">Add to cart</button>
