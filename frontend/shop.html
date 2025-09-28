@@ -108,30 +108,30 @@ document.addEventListener("DOMContentLoaded", () => {
         const imageArray = p.image ? p.image.split(',') : [];
         const firstImageSrc = imageArray.length > 0 ? imageArray[0].trim() : 'placeholder.jpg';
         
-        <!-- In the product card creation section -->
-card.innerHTML = `
-  <div class="image-wrap">
-    <a class="product-link" href="/product.html?id=${p.id}" aria-label="${p.name}">
-      <img 
-        src="/images/${firstImageSrc}" 
-        alt="${p.name}"
-        onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjMyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBGb3VuZDwvdGV4dD48L3N2Zz4='
-      >
-    </a>
-    <div class="actions">
-      <button class="add-btn" data-id="${p.id}" data-name="${encodeURIComponent(p.name)}" data-price="${p.price}">Add to cart</button>
-      <button class="buy-btn" data-id="${p.id}" data-name="${encodeURIComponent(p.name)}" data-price="${p.price}">Buy now</button>
-    </div>
-  </div>
-  <div class="product-info">
-    <h3>${p.name}</h3>
-    <div class="price-container">
-      ${p.originalPrice ? `<span class="original-price">₹${p.originalPrice}</span>` : ''}
-      <span class="current-price">₹${p.price}</span>
-      ${discountPercent > 0 ? `<span class="discount-badge">${discountPercent}% OFF</span>` : ''}
-    </div>
-  </div>
-`;
+        // Create product card HTML
+        card.innerHTML = `
+          <div class="image-wrap">
+            <a class="product-link" href="/product.html?id=${p.id}" aria-label="${p.name}">
+              <img 
+                src="/images/${firstImageSrc}" 
+                alt="${p.name}"
+                onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjMyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBGb3VuZDwvdGV4dD48L3N2Zz4='"
+              >
+            </a>
+            <div class="actions">
+              <button class="add-btn" data-id="${p.id}" data-name="${encodeURIComponent(p.name)}" data-price="${p.price}">Add to cart</button>
+              <button class="buy-btn" data-id="${p.id}" data-name="${encodeURIComponent(p.name)}" data-price="${p.price}">Buy now</button>
+            </div>
+          </div>
+          <div class="product-info">
+            <h3>${p.name}</h3>
+            <div class="price-container">
+              ${p.originalPrice ? `<span class="original-price">₹${p.originalPrice}</span>` : ''}
+              <span class="current-price">₹${p.price}</span>
+              ${discountPercent > 0 ? `<span class="discount-badge">${discountPercent}% OFF</span>` : ''}
+            </div>
+          </div>
+        `;
         shopContainer.appendChild(card);
       });
 
@@ -139,7 +139,7 @@ card.innerHTML = `
       if (products.length < limit) done = true;
     } catch (err) {
       console.error('Error loading products:', err);
-      const loaderEl = document.getElementById('shop-loader');
+      const loaderEl = document.getElementById(loaderId);
       if (loaderEl) loaderEl.remove();
       if (offset === 0) showMessage('Failed to load products. See console.');
       done = true;
