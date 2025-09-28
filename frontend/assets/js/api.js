@@ -1,7 +1,7 @@
 // frontend/assets/js/api.js
 
 // Get the base URL from config or use fallback
-const base = window.API_BASE_URL || window.API_BASE || 'https://desi-aura-backend.onrender.com/api';
+const base = window.API_BASE_URL || 'https://desi-aura-backend.onrender.com';
 
 // Debug logging - remove in production
 console.log('API Base URL in api.js:', base);
@@ -30,10 +30,18 @@ const API = {
       params.append('limit', limit);
       params.append('offset', offset);
       
-      const url = `${base}/products?${params.toString()}`;
+      const url = `${base}/api/products?${params.toString()}`;
       logApiCall('GET', url);
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
       const data = await handleResponse(response);
       
       console.log('[API] Products response:', data);
@@ -51,10 +59,18 @@ const API = {
         throw new Error('Product ID is required');
       }
       
-      const url = `${base}/products/${id}`;
+      const url = `${base}/api/products/${id}`;
       logApiCall('GET', url);
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
       const data = await handleResponse(response);
       
       console.log('[API] Product response:', data);
@@ -73,7 +89,7 @@ const API = {
         throw new Error('Invalid order data');
       }
       
-      const url = `${base}/orders`;
+      const url = `${base}/api/orders`;
       logApiCall('POST', url, order);
       
       const response = await fetch(url, {
@@ -81,7 +97,9 @@ const API = {
         headers: { 
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(order)
+        body: JSON.stringify(order),
+        mode: 'cors',
+        credentials: 'omit'
       });
       
       const data = await handleResponse(response);
@@ -101,10 +119,18 @@ const API = {
         throw new Error('Order ID is required');
       }
       
-      const url = `${base}/orders/${id}`;
+      const url = `${base}/api/orders/${id}`;
       logApiCall('GET', url);
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
       const data = await handleResponse(response);
       
       console.log('[API] Order response:', data);
@@ -118,10 +144,18 @@ const API = {
   // Health check endpoint
   healthCheck: async () => {
     try {
-      const url = `${base}/health`;
+      const url = `${base}/api/health`;
       logApiCall('GET', url);
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
       const data = await handleResponse(response);
       
       console.log('[API] Health check response:', data);
@@ -153,6 +187,7 @@ window.addEventListener('unhandledrejection', (event) => {
 window.checkApiConnectivity = async function() {
   try {
     await API.healthCheck();
+    console.log('[API] Backend connectivity: Connected');
     return true;
   } catch (error) {
     console.error('[API] Connectivity check failed:', error);
@@ -162,13 +197,9 @@ window.checkApiConnectivity = async function() {
 
 // Check connectivity on page load
 if (document.readyState === 'complete') {
-  window.checkApiConnectivity().then(isConnected => {
-    console.log(`[API] Backend connectivity: ${isConnected ? 'Connected' : 'Disconnected'}`);
-  });
+  window.checkApiConnectivity();
 } else {
   window.addEventListener('load', () => {
-    window.checkApiConnectivity().then(isConnected => {
-      console.log(`[API] Backend connectivity: ${isConnected ? 'Connected' : 'Disconnected'}`);
-    });
+    window.checkApiConnectivity();
   });
 }
