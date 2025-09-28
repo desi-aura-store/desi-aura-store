@@ -1,7 +1,7 @@
 // frontend/assets/js/config.js
 
-// Since both frontend and backend are now on the same port, use relative API path
-window.API_BASE_URL = '/api';
+// Use the absolute URL to your Render backend
+window.API_BASE_URL = 'https://desi-aura-backend.onrender.com';
 window.API_BASE = window.API_BASE_URL; // alias for older code
 
 // Debug logging - remove in production
@@ -9,12 +9,12 @@ console.log('API Base URL:', window.API_BASE_URL);
 
 // Optional helpers
 async function fetchProducts() {
-  const res = await fetch(`${window.API_BASE_URL}/products`);
+  const res = await fetch(`${window.API_BASE_URL}/api/products`);
   return res.json();
 }
 
 async function fetchProduct(id) {
-  const res = await fetch(`${window.API_BASE_URL}/products/${id}`);
+  const res = await fetch(`${window.API_BASE_URL}/api/products/${id}`);
   return res.json();
 }
 
