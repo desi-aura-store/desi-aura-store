@@ -7,12 +7,15 @@ const cors = require("cors");
 const nodemailer = require("nodemailer");
 const { sequelize, Product, Order } = require('./models');
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000; // Render uses port 10000
 const app = express();
 app.use(bodyParser.json());
 
-// Simplified CORS configuration for same-origin
-app.use(cors());
+// CORS configuration for Render
+app.use(cors({
+  origin: ['https://your-frontend.vercel.app', 'http://localhost:3000'],
+  credentials: true
+}));
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {
@@ -20,31 +23,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// SERVE STATIC FILES FROM FRONTEND DIRECTORY
-app.use(express.static(path.join(__dirname, '../frontend')));
-
-// Routes to serve HTML files
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
-});
-
-app.get('/index.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
-});
-
-app.get('/shop.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/shop.html'));
-});
-
-app.get('/product.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/product.html'));
-});
-
-app.get('/cart.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/cart.html'));
-});
-
-// Nodemailer transporter: Gmail or fallback
+// Nodemailer transporter
 let transporter;
 if (process.env.GMAIL_USER && process.env.GMAIL_PASS) {
   transporter = nodemailer.createTransport({
@@ -58,17 +37,29 @@ if (process.env.GMAIL_USER && process.env.GMAIL_PASS) {
   console.warn('GMAIL_USER / GMAIL_PASS not set. Emails will not be sent.');
 }
 
-// Sync DB
+// Sync DB and run seed if needed
 (async () => {
   try {
     await sequelize.sync({ alter: true });
     console.log('DB synced');
+    
+    // Check if we need to seed the database
+    const productCount = await Product.count();
+    if (productCount === 0) {
+      console.log('No products found, running seed...');
+      const { seed } = require('./seed');
+      await seed();
+      console.log('Database seeded successfully');
+    }
   } catch (err) {
-    console.error('DB sync error:', err);
+    console.error('DB sync/seed error:', err);
   }
 })();
 
-// API Routes - Define these AFTER static file serving
+// Add a lightweight ping endpoint for pingers
+app.get('/api/ping', (req, res) => {
+  res.status(200).send('pong');
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -77,7 +68,8 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     message: 'API is running',
     timestamp: new Date().toISOString(),
-    version: '1.0.0'
+    version: '1.0.0',
+    uptime: process.uptime()
   });
 });
 
@@ -87,12 +79,14 @@ app.get('/api', (req, res) => {
   res.json({
     message: 'Desi Aura API Server',
     version: '1.0.0',
+    platform: 'Render',
     endpoints: [
       'GET /api/products',
       'GET /api/products/:id',
       'POST /api/orders',
       'GET /api/orders/:id',
-      'GET /api/health'
+      'GET /api/health',
+      'GET /api/ping'
     ]
   });
 });
@@ -201,7 +195,7 @@ app.post('/api/orders', async (req, res) => {
 
     console.log(`[API] Order created with ID: ${order.id}`);
 
-    // Admin notification (existing code)
+    // Admin notification
     const notifyTo = process.env.NOTIFY_EMAIL || process.env.GMAIL_USER;
     if (transporter && notifyTo) {
       const adminEmailContent = [
