@@ -50,14 +50,41 @@ Add a layer of safety and style to your outdoor areas with this high-quality, ec
    },
 ];
 
-(async () => {
+// Export a function that can be called
+async function seed() {
   try {
-    await sequelize.sync({ force: true });
-    await Product.bulkCreate(products);
-    console.log('✅ Seed complete.');
-    process.exit(0);
+    // First sync the database
+    await sequelize.sync({ alter: true });
+    console.log('Database synced');
+    
+    // Check if products already exist
+    const productCount = await Product.count();
+    
+    if (productCount === 0) {
+      // No products exist, so seed them
+      await Product.bulkCreate(products);
+      console.log('✅ Seed complete.');
+    } else {
+      console.log(`Found ${productCount} products already in database. Skipping seed.`);
+    }
   } catch (err) {
-    console.error(err);
-    process.exit(1);
+    console.error('Seed error:', err);
+    throw err; // Rethrow to handle in the caller
   }
-})();
+}
+
+// Export the seed function
+module.exports = { seed };
+
+// If this file is run directly (e.g., `node seed.js`), execute the seed
+if (require.main === module) {
+  seed()
+    .then(() => {
+      console.log('Seed script finished successfully.');
+      process.exit(0);
+    })
+    .catch(err => {
+      console.error('Seed script failed:', err);
+      process.exit(1);
+    });
+}
