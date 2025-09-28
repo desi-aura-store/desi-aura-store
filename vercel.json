@@ -6,3 +6,8 @@
     }
   ]
 }
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/frontend/$1" }
+  ]
+}
