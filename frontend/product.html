@@ -238,6 +238,7 @@
     // Debug logging
     console.log('Product page script loaded');
     console.log('Current URL:', window.location.href);
+    console.log('API Base URL:', window.API_BASE_URL);
     
     // Check if we're on the correct page
     if (!window.location.pathname.includes('product.html')) {
@@ -261,7 +262,6 @@
 
     // Debug logging
     console.log('Product ID from URL:', id);
-    console.log('API Base URL:', window.API_BASE_URL);
 
     // Check if all required elements exist
     if (!nameEl || !priceEl || !descEl || !qtyEl || !addBtn || !buyBtn) {
@@ -284,6 +284,8 @@
 
     try {
       console.log('Fetching product from API...');
+      // FIX: The API.getProduct function already includes /api in the path
+      console.log('Calling API.getProduct with ID:', id);
       const p = await API.getProduct(id);
       console.log('Product data received:', p);
       
