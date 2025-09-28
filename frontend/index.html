@@ -127,13 +127,11 @@
 <script>
     document.addEventListener("DOMContentLoaded", async () => {
       const featured = document.getElementById("featured-products");
-      featured.innerHTML = '';
+      featured.innerHTML = '<div class="loading-spinner"></div>';
 
       try {
-        // Add a loading indicator
-        featured.innerHTML = '<div class="loading-spinner"></div>';
-        
-        const res = await fetch(`${window.API_BASE_URL}/products?limit=3&offset=0`, { 
+        // Fix: Add /api to the path
+        const res = await fetch(`${window.API_BASE_URL}/api/products?limit=3&offset=0`, { 
           cache: 'no-store',
           headers: {
             'Content-Type': 'application/json'
@@ -141,7 +139,7 @@
         });
         
         if (!res.ok) {
-          throw new Error(`HTTP error! Status: ${res.status}`);
+          throw new Error(`HTTP error! status: ${res.status}`);
         }
         
         const products = await res.json();
