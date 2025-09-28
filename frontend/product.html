@@ -179,6 +179,21 @@
       border-top: 1px solid var(--border-color);
       color: var(--muted-text);
     }
+    
+    /* Image placeholder styles */
+    .image-placeholder {
+      width: 100%;
+      height: 100%;
+      background: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+      font-size: 14px;
+      text-align: center;
+      padding: 10px;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
@@ -234,6 +249,9 @@
   <script src="assets/js/product-ui.js" defer></script>
 
   <script>
+  // Data URL for placeholder image
+  const placeholderImageDataUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjMyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBGb3VuZDwvdGV4dD48L3N2Zz4=';
+
   (async function(){
     // Debug logging
     console.log('Product page script loaded');
@@ -284,8 +302,6 @@
 
     try {
       console.log('Fetching product from API...');
-      // FIX: The API.getProduct function already includes /api in the path
-      console.log('Calling API.getProduct with ID:', id);
       const p = await API.getProduct(id);
       console.log('Product data received:', p);
       
@@ -359,14 +375,26 @@
         const slide = document.createElement('div');
         slide.className = 'slide';
         slide.dataset.index = idx;
-        slide.innerHTML = `<img src="/images/${img}" alt="${p.name} - ${idx+1}">`;
+        slide.innerHTML = `
+          <img 
+            src="/images/${img}" 
+            alt="${p.name} - ${idx+1}"
+            onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'image-placeholder\\'>Image not available</div>'"
+          >
+        `;
         rootTrack.appendChild(slide);
 
         // Create thumbnail
         const thumb = document.createElement('button');
         thumb.className = 'thumb';
         thumb.dataset.index = idx;
-        thumb.innerHTML = `<img src="/images/${img}" alt="thumb ${idx+1}">`;
+        thumb.innerHTML = `
+          <img 
+            src="/images/${img}" 
+            alt="thumb ${idx+1}"
+            onerror="this.onerror=null; this.src='${placeholderImageDataUrl}'"
+          >
+        `;
         thumbsRoot.appendChild(thumb);
 
         // Create dot
@@ -374,17 +402,6 @@
         dot.className = 'dot';
         dot.dataset.index = idx;
         dotsRoot.appendChild(dot);
-      });
-
-      // Add error handling for images after they're added to DOM
-      document.querySelectorAll('.slide img, .thumb img').forEach(img => {
-        img.addEventListener('error', function() {
-          // Only replace with placeholder once
-          if (!this.dataset.replaced) {
-            this.src = '/images/placeholder.jpg';
-            this.dataset.replaced = 'true';
-          }
-        });
       });
 
       // Simple gallery mechanics
