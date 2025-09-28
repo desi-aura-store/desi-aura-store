@@ -124,22 +124,36 @@
   <script src="assets/js/product-ui.js" defer></script>
   <script src="assets/js/router.js"></script>
 
-  <script>
+<script>
     document.addEventListener("DOMContentLoaded", async () => {
       const featured = document.getElementById("featured-products");
       featured.innerHTML = '';
 
       try {
-        const res = await fetch(`${window.API_BASE_URL}/products?limit=3&offset=0`, { cache: 'no-store' });
-        if (!res.ok) throw new Error('Failed fetching featured products: ' + res.status);
+        // Add a loading indicator
+        featured.innerHTML = '<div class="loading-spinner"></div>';
+        
+        const res = await fetch(`${window.API_BASE_URL}/products?limit=3&offset=0`, { 
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+        
         const products = await res.json();
 
         if (!Array.isArray(products) || products.length === 0) {
-          featured.innerHTML = '<p class="empty-message">No featured products.</p>';
+          featured.innerHTML = '<p class="empty-message">No featured products available.</p>';
           return;
         }
 
-        // Update the product card creation in index.html
+        // Clear loading indicator
+        featured.innerHTML = '';
+
         products.forEach(p => {
           const card = document.createElement('div');
           card.className = 'product-card fade-in';
@@ -148,10 +162,14 @@
           const discountPercent = p.originalPrice ? 
             Math.round((1 - p.price / p.originalPrice) * 100) : 0;
           
+          // Get the first image from comma-separated list
+          const imageArray = p.image ? p.image.split(',') : [];
+          const firstImageSrc = imageArray.length > 0 ? imageArray[0].trim() : 'placeholder.jpg';
+          
           card.innerHTML = `
             <div class="image-wrap">
               <a class="product-link" href="/product.html?id=${p.id}" aria-label="${p.name}">
-                <img src="/images/${firstImage(p) }" alt="${p.name}">
+                <img src="/images/${firstImageSrc}" alt="${p.name}" onerror="this.src='/images/placeholder.jpg'">
               </a>
               <div class="actions">
                 <button class="add-btn" data-id="${p.id}" data-name="${encodeURIComponent(p.name)}" data-price="${p.price}">Add to cart</button>
@@ -171,8 +189,13 @@
         });
 
       } catch (err) {
-        console.error(err);
-        featured.innerHTML = '<p class="empty-message">Failed to load featured products.</p>';
+        console.error('Error fetching products:', err);
+        featured.innerHTML = `
+          <div class="error-message">
+            <p>Unable to load products. Please try again later.</p>
+            <button class="retry-btn" onclick="location.reload()">Retry</button>
+          </div>
+        `;
       }
       
       // Newsletter form submission
