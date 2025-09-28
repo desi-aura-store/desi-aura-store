@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 
 // CORS configuration for Render
 app.use(cors({
-  origin: ['https://desi-aura-store.vercel.app/', 'http://localhost:3000'],
+  origin: ['https://desi-aura-store.vercel.app', 'http://localhost:3000'],
   credentials: true
 }));
 
