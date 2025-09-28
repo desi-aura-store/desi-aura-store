@@ -1,7 +1,7 @@
 // frontend/assets/js/api.js
 
 // Get the base URL from config or use fallback
-const base = window.API_BASE_URL || window.API_BASE || 'http://localhost:3000/api';
+const base = window.API_BASE_URL || window.API_BASE || 'https://desi-aura-backend.onrender.com/api';
 
 // Debug logging - remove in production
 console.log('API Base URL in api.js:', base);
