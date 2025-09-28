@@ -4,9 +4,7 @@
       "src": "**/*",
       "use": "@vercel/static"
     }
-  ]
-}
-{
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/frontend/$1" }
   ]
