@@ -23,29 +23,35 @@ app.use((req, res, next) => {
   next();
 });
 
-// Nodemailer transporter with improved configuration
+// Nodemailer transporter with Render-optimized configuration
 let transporter;
 if (process.env.GMAIL_USER && process.env.GMAIL_PASS) {
   transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: { 
       user: process.env.GMAIL_USER, 
       pass: process.env.GMAIL_PASS 
     },
+    // Render-specific optimizations
     pool: true,
-    maxConnections: 5,
-    maxMessages: 100,
-    // Add these settings for better reliability
+    maxConnections: 1,
+    maxMessages: 5,
+    rateLimit: 5, // messages per second
+    rateDelta: 1000, // milliseconds
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 15000,
     tls: {
-      rejectUnauthorized: false
+      rejectUnauthorized: false,
+      minVersion: 'TLSv1.2'
     },
-    // Additional settings for Render deployment
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000
+    // Additional headers
+    headers: {
+      'X-Mailer': 'DesiAuraMailer',
+      'X-Priority': '1'
+    }
   });
   console.log('Email transporter configured successfully');
 } else {
@@ -106,7 +112,7 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Test email endpoint
+// Test email endpoint with retry mechanism
 app.get('/api/test-email', async (req, res) => {
   try {
     if (!transporter) {
@@ -122,7 +128,7 @@ app.get('/api/test-email', async (req, res) => {
       text: 'This is a test email from Desi Aura backend. If you receive this, email configuration is working correctly.'
     };
     
-    const result = await transporter.sendMail(mailOptions);
+    const result = await sendEmailWithRetry(mailOptions);
     console.log('Test email sent successfully:', result.messageId);
     
     res.json({ 
@@ -138,6 +144,31 @@ app.get('/api/test-email', async (req, res) => {
     });
   }
 });
+
+// Helper function to send email with retry
+async function sendEmailWithRetry(mailOptions, maxRetries = 3) {
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Sending email (attempt ${attempt}/${maxRetries})`);
+      const result = await transporter.sendMail(mailOptions);
+      return result;
+    } catch (error) {
+      lastError = error;
+      console.warn(`Email attempt ${attempt} failed:`, error.message);
+      
+      // If this isn't the last attempt, wait before retrying
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+        console.log(`Waiting ${delay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError;
+}
 
 // Products endpoints
 app.get('/api/products', async (req, res) => {
@@ -243,7 +274,7 @@ app.post('/api/orders', async (req, res) => {
 
     console.log(`[API] Order created with ID: ${order.id}`);
 
-    // Admin notification with improved error handling
+    // Admin notification with retry mechanism
     const notifyTo = process.env.NOTIFY_EMAIL || process.env.GMAIL_USER;
     if (transporter && notifyTo) {
       const adminEmailContent = [
@@ -264,24 +295,22 @@ app.post('/api/orders', async (req, res) => {
           to: notifyTo,
           subject: `New order #${order.id}`,
           text: adminEmailContent,
-          // Add additional headers for better deliverability
           headers: {
             'X-Priority': '1',
             'X-Mailer': 'DesiAuraMailer'
           }
         };
         
-        await transporter.sendMail(adminMailOptions);
+        await sendEmailWithRetry(adminMailOptions);
         console.log('Admin notification sent successfully');
       } catch (err) {
-        console.error('Failed to send admin notification:', err);
-        // Continue with order processing even if email fails
+        console.error('Failed to send admin notification after retries:', err);
       }
     } else {
       console.warn('No transporter or notify email configured; skipping admin email.');
     }
 
-    // Customer order confirmation email with improved error handling
+    // Customer order confirmation email with retry mechanism
     if (transporter && customerEmail) {
       const customerEmailContent = [
         `Dear ${customerName},`,
@@ -315,18 +344,16 @@ app.post('/api/orders', async (req, res) => {
           to: customerEmail,
           subject: `Order Confirmation - Desi Aura #${order.id}`,
           text: customerEmailContent,
-          // Add additional headers for better deliverability
           headers: {
             'X-Priority': '1',
             'X-Mailer': 'DesiAuraMailer'
           }
         };
         
-        await transporter.sendMail(customerMailOptions);
+        await sendEmailWithRetry(customerMailOptions);
         console.log('Customer confirmation sent successfully');
       } catch (err) {
-        console.error('Failed to send customer confirmation:', err);
-        // Continue with order processing even if email fails
+        console.error('Failed to send customer confirmation after retries:', err);
       }
     } else {
       console.warn('No transporter or customer email configured; skipping customer email.');
