@@ -23,108 +23,120 @@ app.use((req, res, next) => {
   next();
 });
 
-// Nodemailer transporter with multiple configuration options
+// Nodemailer transporter with multiple fallback options
 let transporter;
-if (process.env.GMAIL_USER && process.env.GMAIL_PASS) {
+let emailService = 'none'; // Track which email service is being used
+
+// Function to create Gmail transporter
+function createGmailTransporter() {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+    console.warn('GMAIL_USER / GMAIL_PASS not set. Gmail transporter not created.');
+    return null;
+  }
+  
   // Remove any spaces from the password
   const sanitizedPassword = process.env.GMAIL_PASS.replace(/\s+/g, '');
   
-  // Try multiple configuration options
-  const configs = [
-    // Option 1: Gmail with SSL (port 465)
-    {
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: { 
-        user: process.env.GMAIL_USER, 
-        pass: sanitizedPassword 
-      },
-      pool: true,
-      maxConnections: 1,
-      maxMessages: 5,
-      rateLimit: 5,
-      rateDelta: 1000,
-      connectionTimeout: 20000,
-      greetingTimeout: 20000,
-      socketTimeout: 20000,
-      tls: {
-        rejectUnauthorized: false,
-        minVersion: 'TLSv1.2'
-      }
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: { 
+      user: process.env.GMAIL_USER, 
+      pass: sanitizedPassword 
     },
-    // Option 2: Gmail with STARTTLS (port 587)
-    {
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      requireTLS: true,
-      auth: { 
-        user: process.env.GMAIL_USER, 
-        pass: sanitizedPassword 
-      },
-      pool: true,
-      maxConnections: 1,
-      maxMessages: 5,
-      rateLimit: 5,
-      rateDelta: 1000,
-      connectionTimeout: 20000,
-      greetingTimeout: 20000,
-      socketTimeout: 20000,
-      tls: {
-        rejectUnauthorized: false,
-        minVersion: 'TLSv1.2'
-      }
-    },
-    // Option 3: Alternative configuration with more relaxed settings
-    {
-      service: 'gmail',
-      auth: { 
-        user: process.env.GMAIL_USER, 
-        pass: sanitizedPassword 
-      },
-      pool: true,
-      maxConnections: 1,
-      maxMessages: 5,
-      connectionTimeout: 20000,
-      tls: {
-        rejectUnauthorized: false
-      }
+    // Render-specific optimizations
+    pool: true,
+    maxConnections: 1,
+    maxMessages: 5,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+    tls: {
+      rejectUnauthorized: false
     }
-  ];
-  
-  // Function to test transporter configuration
-  const testTransporter = async (config, index) => {
-    try {
-      console.log(`Testing transporter configuration ${index + 1}...`);
-      const testTransporter = nodemailer.createTransport(config);
-      await testTransporter.verify();
-      console.log(`Transporter configuration ${index + 1} verified successfully`);
-      return testTransporter;
-    } catch (error) {
-      console.warn(`Transporter configuration ${index + 1} failed:`, error.message);
-      return null;
-    }
-  };
-  
-  // Try each configuration until one works
-  (async () => {
-    for (let i = 0; i < configs.length; i++) {
-      const testTransporterResult = await testTransporter(configs[i], i);
-      if (testTransporterResult) {
-        transporter = testTransporterResult;
-        console.log(`Using transporter configuration ${i + 1}`);
-        break;
-      }
-    }
-    
-    if (!transporter) {
-      console.error('All transporter configurations failed. Email notifications will not work.');
-    }
-  })();
-} else {
-  console.warn('GMAIL_USER / GMAIL_PASS not set. Emails will not be sent.');
+  });
 }
+
+// Function to create SendGrid transporter
+function createSendGridTransporter() {
+  if (!process.env.SENDGRID_API_KEY) {
+    console.warn('SENDGRID_API_KEY not set. SendGrid transporter not created.');
+    return null;
+  }
+  
+  return nodemailer.createTransport({
+    host: 'smtp.sendgrid.net',
+    port: 587,
+    secure: false, // true for 465, false for other ports
+    auth: {
+      user: 'apikey', // SendGrid requires this specific username
+      pass: process.env.SENDGRID_API_KEY
+    }
+  });
+}
+
+// Function to create Ethereal Email transporter (for testing)
+function createEtherealTransporter() {
+  return nodemailer.createTransport({
+    host: 'smtp.ethereal.email',
+    port: 587,
+    secure: false,
+    auth: {
+      user: 'ethereal.user@ethereal.email', // Ethereal test username
+      pass: 'ethereal.password' // Ethereal test password
+    }
+  });
+}
+
+// Initialize transporter with fallback options
+async function initializeTransporter() {
+  // Try Gmail first
+  console.log('Attempting to configure Gmail transporter...');
+  const gmailTransporter = createGmailTransporter();
+  if (gmailTransporter) {
+    try {
+      await gmailTransporter.verify();
+      transporter = gmailTransporter;
+      emailService = 'gmail';
+      console.log('Gmail transporter configured successfully');
+      return;
+    } catch (error) {
+      console.warn('Gmail transporter verification failed:', error.message);
+    }
+  }
+  
+  // Try SendGrid as fallback
+  console.log('Attempting to configure SendGrid transporter...');
+  const sendgridTransporter = createSendGridTransporter();
+  if (sendgridTransporter) {
+    try {
+      await sendgridTransporter.verify();
+      transporter = sendgridTransporter;
+      emailService = 'sendgrid';
+      console.log('SendGrid transporter configured successfully');
+      return;
+    } catch (error) {
+      console.warn('SendGrid transporter verification failed:', error.message);
+    }
+  }
+  
+  // Try Ethereal as last resort (for testing only)
+  console.log('Attempting to configure Ethereal transporter...');
+  const etherealTransporter = createEtherealTransporter();
+  try {
+    await etherealTransporter.verify();
+    transporter = etherealTransporter;
+    emailService = 'ethereal';
+    console.log('Ethereal transporter configured successfully (for testing only)');
+    return;
+  } catch (error) {
+    console.warn('Ethereal transporter verification failed:', error.message);
+  }
+  
+  console.error('All email transporters failed. Email notifications will not work.');
+}
+
+// Initialize transporter
+initializeTransporter();
 
 // Sync DB and run seed if needed
 (async () => {
@@ -159,7 +171,8 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     version: '1.0.0',
     uptime: process.uptime(),
-    emailConfigured: !!transporter
+    emailConfigured: !!transporter,
+    emailService: emailService
   });
 });
 
@@ -179,67 +192,50 @@ app.get('/api', (req, res) => {
       'GET /api/ping',
       'GET /api/test-email'
     ],
-    emailConfigured: !!transporter
+    emailConfigured: !!transporter,
+    emailService: emailService
   });
 });
 
-// Test email endpoint with retry mechanism
+// Test email endpoint
 app.get('/api/test-email', async (req, res) => {
   try {
     if (!transporter) {
-      return res.status(500).json({ error: 'Email transporter not configured' });
+      return res.status(500).json({ 
+        error: 'Email transporter not configured',
+        emailService: emailService
+      });
     }
     
-    const testEmail = process.env.NOTIFY_EMAIL || process.env.GMAIL_USER;
+    const testEmail = process.env.NOTIFY_EMAIL || process.env.GMAIL_USER || 'test@example.com';
     
     const mailOptions = {
-      from: process.env.GMAIL_USER,
+      from: emailService === 'sendgrid' 
+        ? process.env.SENDGRID_FROM_EMAIL || process.env.GMAIL_USER 
+        : process.env.GMAIL_USER,
       to: testEmail,
       subject: 'Test Email from Desi Aura',
       text: 'This is a test email from Desi Aura backend. If you receive this, email configuration is working correctly.'
     };
     
-    const result = await sendEmailWithRetry(mailOptions);
+    const result = await transporter.sendMail(mailOptions);
     console.log('Test email sent successfully:', result.messageId);
     
     res.json({ 
       success: true, 
       message: 'Test email sent successfully',
-      messageId: result.messageId 
+      messageId: result.messageId,
+      emailService: emailService
     });
   } catch (error) {
     console.error('Error sending test email:', error);
     res.status(500).json({ 
       error: 'Failed to send test email',
-      details: error.message 
+      details: error.message,
+      emailService: emailService
     });
   }
 });
-
-// Helper function to send email with retry
-async function sendEmailWithRetry(mailOptions, maxRetries = 3) {
-  let lastError;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`Sending email (attempt ${attempt}/${maxRetries})`);
-      const result = await transporter.sendMail(mailOptions);
-      return result;
-    } catch (error) {
-      lastError = error;
-      console.warn(`Email attempt ${attempt} failed:`, error.message);
-      
-      // If this isn't the last attempt, wait before retrying
-      if (attempt < maxRetries) {
-        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
-        console.log(`Waiting ${delay}ms before retry...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-  }
-  
-  throw lastError;
-}
 
 // Products endpoints
 app.get('/api/products', async (req, res) => {
@@ -345,7 +341,7 @@ app.post('/api/orders', async (req, res) => {
 
     console.log(`[API] Order created with ID: ${order.id}`);
 
-    // Admin notification with retry mechanism
+    // Admin notification
     const notifyTo = process.env.NOTIFY_EMAIL || process.env.GMAIL_USER;
     if (transporter && notifyTo) {
       const adminEmailContent = [
@@ -362,26 +358,24 @@ app.post('/api/orders', async (req, res) => {
 
       try {
         const adminMailOptions = {
-          from: process.env.GMAIL_USER,
+          from: emailService === 'sendgrid' 
+            ? process.env.SENDGRID_FROM_EMAIL || process.env.GMAIL_USER 
+            : process.env.GMAIL_USER,
           to: notifyTo,
           subject: `New order #${order.id}`,
-          text: adminEmailContent,
-          headers: {
-            'X-Priority': '1',
-            'X-Mailer': 'DesiAuraMailer'
-          }
+          text: adminEmailContent
         };
         
-        await sendEmailWithRetry(adminMailOptions);
+        await transporter.sendMail(adminMailOptions);
         console.log('Admin notification sent successfully');
       } catch (err) {
-        console.error('Failed to send admin notification after retries:', err);
+        console.error('Failed to send admin notification:', err);
       }
     } else {
       console.warn('No transporter or notify email configured; skipping admin email.');
     }
 
-    // Customer order confirmation email with retry mechanism
+    // Customer order confirmation email
     if (transporter && customerEmail) {
       const customerEmailContent = [
         `Dear ${customerName},`,
@@ -411,20 +405,18 @@ app.post('/api/orders', async (req, res) => {
 
       try {
         const customerMailOptions = {
-          from: process.env.GMAIL_USER,
+          from: emailService === 'sendgrid' 
+            ? process.env.SENDGRID_FROM_EMAIL || process.env.GMAIL_USER 
+            : process.env.GMAIL_USER,
           to: customerEmail,
           subject: `Order Confirmation - Desi Aura #${order.id}`,
-          text: customerEmailContent,
-          headers: {
-            'X-Priority': '1',
-            'X-Mailer': 'DesiAuraMailer'
-          }
+          text: customerEmailContent
         };
         
-        await sendEmailWithRetry(customerMailOptions);
+        await transporter.sendMail(customerMailOptions);
         console.log('Customer confirmation sent successfully');
       } catch (err) {
-        console.error('Failed to send customer confirmation after retries:', err);
+        console.error('Failed to send customer confirmation:', err);
       }
     } else {
       console.warn('No transporter or customer email configured; skipping customer email.');
