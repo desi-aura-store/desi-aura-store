@@ -23,16 +23,24 @@ app.use((req, res, next) => {
   next();
 });
 
-// Nodemailer transporter
+// Nodemailer transporter with improved configuration
 let transporter;
 if (process.env.GMAIL_USER && process.env.GMAIL_PASS) {
   transporter = nodemailer.createTransport({
     service: 'gmail',
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS },
+    auth: { 
+      user: process.env.GMAIL_USER, 
+      pass: process.env.GMAIL_PASS 
+    },
     pool: true,
     maxConnections: 5,
-    maxMessages: 100
+    maxMessages: 100,
+    // Add these settings for better reliability
+    tls: {
+      rejectUnauthorized: false
+    }
   });
+  console.log('Email transporter configured successfully');
 } else {
   console.warn('GMAIL_USER / GMAIL_PASS not set. Emails will not be sent.');
 }
@@ -89,6 +97,39 @@ app.get('/api', (req, res) => {
       'GET /api/ping'
     ]
   });
+});
+
+// Test email endpoint
+app.get('/api/test-email', async (req, res) => {
+  try {
+    if (!transporter) {
+      return res.status(500).json({ error: 'Email transporter not configured' });
+    }
+    
+    const testEmail = process.env.NOTIFY_EMAIL || process.env.GMAIL_USER;
+    
+    const mailOptions = {
+      from: process.env.GMAIL_USER,
+      to: testEmail,
+      subject: 'Test Email from Desi Aura',
+      text: 'This is a test email from Desi Aura backend. If you receive this, email configuration is working correctly.'
+    };
+    
+    const result = await transporter.sendMail(mailOptions);
+    console.log('Test email sent successfully:', result.messageId);
+    
+    res.json({ 
+      success: true, 
+      message: 'Test email sent successfully',
+      messageId: result.messageId 
+    });
+  } catch (error) {
+    console.error('Error sending test email:', error);
+    res.status(500).json({ 
+      error: 'Failed to send test email',
+      details: error.message 
+    });
+  }
 });
 
 // Products endpoints
@@ -195,7 +236,7 @@ app.post('/api/orders', async (req, res) => {
 
     console.log(`[API] Order created with ID: ${order.id}`);
 
-    // Admin notification
+    // Admin notification with better error handling
     const notifyTo = process.env.NOTIFY_EMAIL || process.env.GMAIL_USER;
     if (transporter && notifyTo) {
       const adminEmailContent = [
@@ -210,17 +251,22 @@ app.post('/api/orders', async (req, res) => {
         ...detailedItems.map(i => `${i.quantity}x ${i.name} — ₹${i.lineTotal.toFixed(2)}`)
       ].join('\n');
 
-      transporter.sendMail({
-        from: process.env.GMAIL_USER,
-        to: notifyTo,
-        subject: `New order #${order.id}`,
-        text: adminEmailContent
-      }).catch(err => console.error('Admin email error:', err));
+      try {
+        await transporter.sendMail({
+          from: process.env.GMAIL_USER,
+          to: notifyTo,
+          subject: `New order #${order.id}`,
+          text: adminEmailContent
+        });
+        console.log('Admin notification sent successfully');
+      } catch (err) {
+        console.error('Failed to send admin notification:', err);
+      }
     } else {
       console.warn('No transporter or notify email configured; skipping admin email.');
     }
 
-    // Customer order confirmation email
+    // Customer order confirmation email with better error handling
     if (transporter && customerEmail) {
       const customerEmailContent = [
         `Dear ${customerName},`,
@@ -248,12 +294,17 @@ app.post('/api/orders', async (req, res) => {
         `Desi Aura Team`
       ].join('\n');
 
-      transporter.sendMail({
-        from: process.env.GMAIL_USER,
-        to: customerEmail,
-        subject: `Order Confirmation - Desi Aura #${order.id}`,
-        text: customerEmailContent
-      }).catch(err => console.error('Customer email error:', err));
+      try {
+        await transporter.sendMail({
+          from: process.env.GMAIL_USER,
+          to: customerEmail,
+          subject: `Order Confirmation - Desi Aura #${order.id}`,
+          text: customerEmailContent
+        });
+        console.log('Customer confirmation sent successfully');
+      } catch (err) {
+        console.error('Failed to send customer confirmation:', err);
+      }
     } else {
       console.warn('No transporter or customer email configured; skipping customer email.');
     }
