@@ -37,9 +37,13 @@ async function initializeGmailTransporter() {
   // Remove any spaces from the password
   const sanitizedPassword = process.env.GMAIL_PASS.replace(/\s+/g, '');
   
-  // Try different Gmail configurations
+  console.log('Initializing Gmail transporter...');
+  console.log(`GMAIL_USER: ${process.env.GMAIL_USER}`);
+  console.log(`GMAIL_PASS length: ${sanitizedPassword.length} characters`);
+  
+  // Try multiple Gmail configurations with different settings
   const configs = [
-    // Configuration 1: Gmail with explicit SSL
+    // Configuration 1: Gmail with explicit SSL and longer timeouts
     {
       host: 'smtp.gmail.com',
       port: 465,
@@ -48,13 +52,17 @@ async function initializeGmailTransporter() {
         user: process.env.GMAIL_USER, 
         pass: sanitizedPassword 
       },
-      connectionTimeout: 20000,
-      socketTimeout: 20000,
+      connectionTimeout: 30000,
+      socketTimeout: 30000,
+      greetingTimeout: 30000,
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2'
+      },
+      debug: true,
+      logger: true
     },
-    // Configuration 2: Gmail with STARTTLS
+    // Configuration 2: Gmail with STARTTLS and longer timeouts
     {
       host: 'smtp.gmail.com',
       port: 587,
@@ -64,42 +72,57 @@ async function initializeGmailTransporter() {
         user: process.env.GMAIL_USER, 
         pass: sanitizedPassword 
       },
-      connectionTimeout: 20000,
-      socketTimeout: 20000,
+      connectionTimeout: 30000,
+      socketTimeout: 30000,
+      greetingTimeout: 30000,
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2'
+      },
+      debug: true,
+      logger: true
     },
-    // Configuration 3: Simplified Gmail service
+    // Configuration 3: Gmail service with proxy settings
     {
       service: 'gmail',
       auth: { 
         user: process.env.GMAIL_USER, 
         pass: sanitizedPassword 
       },
-      connectionTimeout: 20000,
-      socketTimeout: 20000,
+      connectionTimeout: 30000,
+      socketTimeout: 30000,
       tls: {
         rejectUnauthorized: false
-      }
+      },
+      debug: true,
+      logger: true
     }
   ];
   
   // Try each configuration
   for (let i = 0; i < configs.length; i++) {
     try {
-      console.log(`Trying Gmail configuration ${i + 1}...`);
+      console.log(`\n=== Trying Gmail configuration ${i + 1} ===`);
       transporter = nodemailer.createTransport(configs[i]);
+      
+      // Test the connection
+      console.log('Verifying connection...');
       await transporter.verify();
       emailConfigured = true;
-      console.log(`Gmail transporter configured successfully with configuration ${i + 1}`);
+      console.log(`\n✅ Gmail transporter configured successfully with configuration ${i + 1}`);
       return;
     } catch (error) {
-      console.warn(`Gmail configuration ${i + 1} failed:`, error.message);
+      console.error(`❌ Gmail configuration ${i + 1} failed:`, error.message);
+      console.error('Full error:', error);
     }
   }
   
-  console.error('All Gmail configurations failed. Email notifications will not work.');
+  console.error('\n❌ All Gmail configurations failed. Email notifications will not work.');
+  console.log('\nTroubleshooting tips:');
+  console.log('1. Make sure you are using an App Password (not your regular password)');
+  console.log('2. Enable "Less secure app access" in your Google account settings');
+  console.log('3. Check if Google is blocking access (look for security alerts)');
+  console.log('4. Verify your environment variables are correctly set in Render');
 }
 
 // Initialize transporter
@@ -167,7 +190,8 @@ app.get('/api/test-email', async (req, res) => {
   try {
     if (!emailConfigured || !transporter) {
       return res.status(500).json({ 
-        error: 'Email transporter not configured'
+        error: 'Email transporter not configured',
+        emailConfigured: emailConfigured
       });
     }
     
@@ -180,8 +204,9 @@ app.get('/api/test-email', async (req, res) => {
       text: 'This is a test email from Desi Aura backend. If you receive this, email configuration is working correctly.'
     };
     
+    console.log('\n=== Sending test email ===');
     const result = await transporter.sendMail(mailOptions);
-    console.log('Test email sent successfully:', result.messageId);
+    console.log('✅ Test email sent successfully:', result.messageId);
     
     res.json({ 
       success: true, 
@@ -189,7 +214,7 @@ app.get('/api/test-email', async (req, res) => {
       messageId: result.messageId
     });
   } catch (error) {
-    console.error('Error sending test email:', error);
+    console.error('❌ Error sending test email:', error);
     res.status(500).json({ 
       error: 'Failed to send test email',
       details: error.message
@@ -324,10 +349,11 @@ app.post('/api/orders', async (req, res) => {
           text: adminEmailContent
         };
         
+        console.log('\n=== Sending admin notification ===');
         await transporter.sendMail(adminMailOptions);
-        console.log('Admin notification sent successfully');
+        console.log('✅ Admin notification sent successfully');
       } catch (err) {
-        console.error('Failed to send admin notification:', err);
+        console.error('❌ Failed to send admin notification:', err);
       }
     } else {
       console.warn('Email not configured; skipping admin email.');
@@ -369,10 +395,11 @@ app.post('/api/orders', async (req, res) => {
           text: customerEmailContent
         };
         
+        console.log('\n=== Sending customer confirmation ===');
         await transporter.sendMail(customerMailOptions);
-        console.log('Customer confirmation sent successfully');
+        console.log('✅ Customer confirmation sent successfully');
       } catch (err) {
-        console.error('Failed to send customer confirmation:', err);
+        console.error('❌ Failed to send customer confirmation:', err);
       }
     } else {
       console.warn('Email not configured; skipping customer email.');
