@@ -23,120 +23,87 @@ app.use((req, res, next) => {
   next();
 });
 
-// Nodemailer transporter with multiple fallback options
+// Gmail transporter configuration
 let transporter;
-let emailService = 'none'; // Track which email service is being used
+let emailConfigured = false;
 
-// Function to create Gmail transporter
-function createGmailTransporter() {
+// Initialize Gmail transporter
+async function initializeGmailTransporter() {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
-    console.warn('GMAIL_USER / GMAIL_PASS not set. Gmail transporter not created.');
-    return null;
+    console.warn('GMAIL_USER or GMAIL_PASS not set. Email notifications will not work.');
+    return;
   }
   
   // Remove any spaces from the password
   const sanitizedPassword = process.env.GMAIL_PASS.replace(/\s+/g, '');
   
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: { 
-      user: process.env.GMAIL_USER, 
-      pass: sanitizedPassword 
+  // Try different Gmail configurations
+  const configs = [
+    // Configuration 1: Gmail with explicit SSL
+    {
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: { 
+        user: process.env.GMAIL_USER, 
+        pass: sanitizedPassword 
+      },
+      connectionTimeout: 20000,
+      socketTimeout: 20000,
+      tls: {
+        rejectUnauthorized: false
+      }
     },
-    // Render-specific optimizations
-    pool: true,
-    maxConnections: 1,
-    maxMessages: 5,
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
-    tls: {
-      rejectUnauthorized: false
+    // Configuration 2: Gmail with STARTTLS
+    {
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      requireTLS: true,
+      auth: { 
+        user: process.env.GMAIL_USER, 
+        pass: sanitizedPassword 
+      },
+      connectionTimeout: 20000,
+      socketTimeout: 20000,
+      tls: {
+        rejectUnauthorized: false
+      }
+    },
+    // Configuration 3: Simplified Gmail service
+    {
+      service: 'gmail',
+      auth: { 
+        user: process.env.GMAIL_USER, 
+        pass: sanitizedPassword 
+      },
+      connectionTimeout: 20000,
+      socketTimeout: 20000,
+      tls: {
+        rejectUnauthorized: false
+      }
     }
-  });
-}
-
-// Function to create SendGrid transporter
-function createSendGridTransporter() {
-  if (!process.env.SENDGRID_API_KEY) {
-    console.warn('SENDGRID_API_KEY not set. SendGrid transporter not created.');
-    return null;
-  }
+  ];
   
-  return nodemailer.createTransport({
-    host: 'smtp.sendgrid.net',
-    port: 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: 'apikey', // SendGrid requires this specific username
-      pass: process.env.SENDGRID_API_KEY
-    }
-  });
-}
-
-// Function to create Ethereal Email transporter (for testing)
-function createEtherealTransporter() {
-  return nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    secure: false,
-    auth: {
-      user: 'ethereal.user@ethereal.email', // Ethereal test username
-      pass: 'ethereal.password' // Ethereal test password
-    }
-  });
-}
-
-// Initialize transporter with fallback options
-async function initializeTransporter() {
-  // Try Gmail first
-  console.log('Attempting to configure Gmail transporter...');
-  const gmailTransporter = createGmailTransporter();
-  if (gmailTransporter) {
+  // Try each configuration
+  for (let i = 0; i < configs.length; i++) {
     try {
-      await gmailTransporter.verify();
-      transporter = gmailTransporter;
-      emailService = 'gmail';
-      console.log('Gmail transporter configured successfully');
+      console.log(`Trying Gmail configuration ${i + 1}...`);
+      transporter = nodemailer.createTransport(configs[i]);
+      await transporter.verify();
+      emailConfigured = true;
+      console.log(`Gmail transporter configured successfully with configuration ${i + 1}`);
       return;
     } catch (error) {
-      console.warn('Gmail transporter verification failed:', error.message);
+      console.warn(`Gmail configuration ${i + 1} failed:`, error.message);
     }
   }
   
-  // Try SendGrid as fallback
-  console.log('Attempting to configure SendGrid transporter...');
-  const sendgridTransporter = createSendGridTransporter();
-  if (sendgridTransporter) {
-    try {
-      await sendgridTransporter.verify();
-      transporter = sendgridTransporter;
-      emailService = 'sendgrid';
-      console.log('SendGrid transporter configured successfully');
-      return;
-    } catch (error) {
-      console.warn('SendGrid transporter verification failed:', error.message);
-    }
-  }
-  
-  // Try Ethereal as last resort (for testing only)
-  console.log('Attempting to configure Ethereal transporter...');
-  const etherealTransporter = createEtherealTransporter();
-  try {
-    await etherealTransporter.verify();
-    transporter = etherealTransporter;
-    emailService = 'ethereal';
-    console.log('Ethereal transporter configured successfully (for testing only)');
-    return;
-  } catch (error) {
-    console.warn('Ethereal transporter verification failed:', error.message);
-  }
-  
-  console.error('All email transporters failed. Email notifications will not work.');
+  console.error('All Gmail configurations failed. Email notifications will not work.');
 }
 
 // Initialize transporter
-initializeTransporter();
+initializeGmailTransporter();
 
 // Sync DB and run seed if needed
 (async () => {
@@ -171,8 +138,7 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     version: '1.0.0',
     uptime: process.uptime(),
-    emailConfigured: !!transporter,
-    emailService: emailService
+    emailConfigured: emailConfigured
   });
 });
 
@@ -192,27 +158,23 @@ app.get('/api', (req, res) => {
       'GET /api/ping',
       'GET /api/test-email'
     ],
-    emailConfigured: !!transporter,
-    emailService: emailService
+    emailConfigured: emailConfigured
   });
 });
 
 // Test email endpoint
 app.get('/api/test-email', async (req, res) => {
   try {
-    if (!transporter) {
+    if (!emailConfigured || !transporter) {
       return res.status(500).json({ 
-        error: 'Email transporter not configured',
-        emailService: emailService
+        error: 'Email transporter not configured'
       });
     }
     
-    const testEmail = process.env.NOTIFY_EMAIL || process.env.GMAIL_USER || 'test@example.com';
+    const testEmail = process.env.NOTIFY_EMAIL || process.env.GMAIL_USER;
     
     const mailOptions = {
-      from: emailService === 'sendgrid' 
-        ? process.env.SENDGRID_FROM_EMAIL || process.env.GMAIL_USER 
-        : process.env.GMAIL_USER,
+      from: process.env.GMAIL_USER,
       to: testEmail,
       subject: 'Test Email from Desi Aura',
       text: 'This is a test email from Desi Aura backend. If you receive this, email configuration is working correctly.'
@@ -224,15 +186,13 @@ app.get('/api/test-email', async (req, res) => {
     res.json({ 
       success: true, 
       message: 'Test email sent successfully',
-      messageId: result.messageId,
-      emailService: emailService
+      messageId: result.messageId
     });
   } catch (error) {
     console.error('Error sending test email:', error);
     res.status(500).json({ 
       error: 'Failed to send test email',
-      details: error.message,
-      emailService: emailService
+      details: error.message
     });
   }
 });
@@ -343,7 +303,7 @@ app.post('/api/orders', async (req, res) => {
 
     // Admin notification
     const notifyTo = process.env.NOTIFY_EMAIL || process.env.GMAIL_USER;
-    if (transporter && notifyTo) {
+    if (emailConfigured && transporter && notifyTo) {
       const adminEmailContent = [
         `New order received — #${order.id}`,
         `Name: ${customerName}`,
@@ -358,9 +318,7 @@ app.post('/api/orders', async (req, res) => {
 
       try {
         const adminMailOptions = {
-          from: emailService === 'sendgrid' 
-            ? process.env.SENDGRID_FROM_EMAIL || process.env.GMAIL_USER 
-            : process.env.GMAIL_USER,
+          from: process.env.GMAIL_USER,
           to: notifyTo,
           subject: `New order #${order.id}`,
           text: adminEmailContent
@@ -372,11 +330,11 @@ app.post('/api/orders', async (req, res) => {
         console.error('Failed to send admin notification:', err);
       }
     } else {
-      console.warn('No transporter or notify email configured; skipping admin email.');
+      console.warn('Email not configured; skipping admin email.');
     }
 
     // Customer order confirmation email
-    if (transporter && customerEmail) {
+    if (emailConfigured && transporter && customerEmail) {
       const customerEmailContent = [
         `Dear ${customerName},`,
         ``,
@@ -405,9 +363,7 @@ app.post('/api/orders', async (req, res) => {
 
       try {
         const customerMailOptions = {
-          from: emailService === 'sendgrid' 
-            ? process.env.SENDGRID_FROM_EMAIL || process.env.GMAIL_USER 
-            : process.env.GMAIL_USER,
+          from: process.env.GMAIL_USER,
           to: customerEmail,
           subject: `Order Confirmation - Desi Aura #${order.id}`,
           text: customerEmailContent
@@ -419,7 +375,7 @@ app.post('/api/orders', async (req, res) => {
         console.error('Failed to send customer confirmation:', err);
       }
     } else {
-      console.warn('No transporter or customer email configured; skipping customer email.');
+      console.warn('Email not configured; skipping customer email.');
     }
 
     res.json({ success: true, orderId: order.id });
