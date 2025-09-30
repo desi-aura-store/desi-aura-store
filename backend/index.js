@@ -23,37 +23,105 @@ app.use((req, res, next) => {
   next();
 });
 
-// Nodemailer transporter with Render-optimized configuration
+// Nodemailer transporter with multiple configuration options
 let transporter;
 if (process.env.GMAIL_USER && process.env.GMAIL_PASS) {
-  transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: { 
-      user: process.env.GMAIL_USER, 
-      pass: process.env.GMAIL_PASS 
+  // Remove any spaces from the password
+  const sanitizedPassword = process.env.GMAIL_PASS.replace(/\s+/g, '');
+  
+  // Try multiple configuration options
+  const configs = [
+    // Option 1: Gmail with SSL (port 465)
+    {
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: { 
+        user: process.env.GMAIL_USER, 
+        pass: sanitizedPassword 
+      },
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 5,
+      rateLimit: 5,
+      rateDelta: 1000,
+      connectionTimeout: 20000,
+      greetingTimeout: 20000,
+      socketTimeout: 20000,
+      tls: {
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2'
+      }
     },
-    // Render-specific optimizations
-    pool: true,
-    maxConnections: 1,
-    maxMessages: 5,
-    rateLimit: 5, // messages per second
-    rateDelta: 1000, // milliseconds
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    socketTimeout: 15000,
-    tls: {
-      rejectUnauthorized: false,
-      minVersion: 'TLSv1.2'
+    // Option 2: Gmail with STARTTLS (port 587)
+    {
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      requireTLS: true,
+      auth: { 
+        user: process.env.GMAIL_USER, 
+        pass: sanitizedPassword 
+      },
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 5,
+      rateLimit: 5,
+      rateDelta: 1000,
+      connectionTimeout: 20000,
+      greetingTimeout: 20000,
+      socketTimeout: 20000,
+      tls: {
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2'
+      }
     },
-    // Additional headers
-    headers: {
-      'X-Mailer': 'DesiAuraMailer',
-      'X-Priority': '1'
+    // Option 3: Alternative configuration with more relaxed settings
+    {
+      service: 'gmail',
+      auth: { 
+        user: process.env.GMAIL_USER, 
+        pass: sanitizedPassword 
+      },
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 5,
+      connectionTimeout: 20000,
+      tls: {
+        rejectUnauthorized: false
+      }
     }
-  });
-  console.log('Email transporter configured successfully');
+  ];
+  
+  // Function to test transporter configuration
+  const testTransporter = async (config, index) => {
+    try {
+      console.log(`Testing transporter configuration ${index + 1}...`);
+      const testTransporter = nodemailer.createTransport(config);
+      await testTransporter.verify();
+      console.log(`Transporter configuration ${index + 1} verified successfully`);
+      return testTransporter;
+    } catch (error) {
+      console.warn(`Transporter configuration ${index + 1} failed:`, error.message);
+      return null;
+    }
+  };
+  
+  // Try each configuration until one works
+  (async () => {
+    for (let i = 0; i < configs.length; i++) {
+      const testTransporterResult = await testTransporter(configs[i], i);
+      if (testTransporterResult) {
+        transporter = testTransporterResult;
+        console.log(`Using transporter configuration ${i + 1}`);
+        break;
+      }
+    }
+    
+    if (!transporter) {
+      console.error('All transporter configurations failed. Email notifications will not work.');
+    }
+  })();
 } else {
   console.warn('GMAIL_USER / GMAIL_PASS not set. Emails will not be sent.');
 }
@@ -90,7 +158,8 @@ app.get('/api/health', (req, res) => {
     message: 'API is running',
     timestamp: new Date().toISOString(),
     version: '1.0.0',
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    emailConfigured: !!transporter
   });
 });
 
@@ -107,8 +176,10 @@ app.get('/api', (req, res) => {
       'POST /api/orders',
       'GET /api/orders/:id',
       'GET /api/health',
-      'GET /api/ping'
-    ]
+      'GET /api/ping',
+      'GET /api/test-email'
+    ],
+    emailConfigured: !!transporter
   });
 });
 
