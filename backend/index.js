@@ -38,7 +38,14 @@ if (process.env.GMAIL_USER && process.env.GMAIL_PASS) {
     // Add these settings for better reliability
     tls: {
       rejectUnauthorized: false
-    }
+    },
+    // Additional settings for Render deployment
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000
   });
   console.log('Email transporter configured successfully');
 } else {
@@ -236,7 +243,7 @@ app.post('/api/orders', async (req, res) => {
 
     console.log(`[API] Order created with ID: ${order.id}`);
 
-    // Admin notification with better error handling
+    // Admin notification with improved error handling
     const notifyTo = process.env.NOTIFY_EMAIL || process.env.GMAIL_USER;
     if (transporter && notifyTo) {
       const adminEmailContent = [
@@ -252,21 +259,29 @@ app.post('/api/orders', async (req, res) => {
       ].join('\n');
 
       try {
-        await transporter.sendMail({
+        const adminMailOptions = {
           from: process.env.GMAIL_USER,
           to: notifyTo,
           subject: `New order #${order.id}`,
-          text: adminEmailContent
-        });
+          text: adminEmailContent,
+          // Add additional headers for better deliverability
+          headers: {
+            'X-Priority': '1',
+            'X-Mailer': 'DesiAuraMailer'
+          }
+        };
+        
+        await transporter.sendMail(adminMailOptions);
         console.log('Admin notification sent successfully');
       } catch (err) {
         console.error('Failed to send admin notification:', err);
+        // Continue with order processing even if email fails
       }
     } else {
       console.warn('No transporter or notify email configured; skipping admin email.');
     }
 
-    // Customer order confirmation email with better error handling
+    // Customer order confirmation email with improved error handling
     if (transporter && customerEmail) {
       const customerEmailContent = [
         `Dear ${customerName},`,
@@ -295,15 +310,23 @@ app.post('/api/orders', async (req, res) => {
       ].join('\n');
 
       try {
-        await transporter.sendMail({
+        const customerMailOptions = {
           from: process.env.GMAIL_USER,
           to: customerEmail,
           subject: `Order Confirmation - Desi Aura #${order.id}`,
-          text: customerEmailContent
-        });
+          text: customerEmailContent,
+          // Add additional headers for better deliverability
+          headers: {
+            'X-Priority': '1',
+            'X-Mailer': 'DesiAuraMailer'
+          }
+        };
+        
+        await transporter.sendMail(customerMailOptions);
         console.log('Customer confirmation sent successfully');
       } catch (err) {
         console.error('Failed to send customer confirmation:', err);
+        // Continue with order processing even if email fails
       }
     } else {
       console.warn('No transporter or customer email configured; skipping customer email.');
