@@ -35,6 +35,12 @@ if (process.env.RESEND_API_KEY) {
   console.warn('⚠️ RESEND_API_KEY not set. Email notifications will not work.');
 }
 
+// Generate a random order ID
+function generateOrderId() {
+  return 'ORD-' + Math.random().toString(36).substring(2, 15).toUpperCase() + 
+         '-' + Date.now().toString(36).substring(4, 10).toUpperCase();
+}
+
 // Sync DB and run seed if needed
 (async () => {
   try {
@@ -103,6 +109,7 @@ app.get('/api/test-email', async (req, res) => {
     }
     
     const testEmail = process.env.NOTIFY_EMAIL || 'onboarding@resend.dev';
+    console.log(`Sending test email to: ${testEmail}`);
     
     const { data, error } = await resend.emails.send({
       from: 'Desi Aura <onboarding@resend.dev>',
@@ -225,7 +232,11 @@ app.post('/api/orders', async (req, res) => {
       });
     }
 
+    // Generate a random order ID
+    const orderId = generateOrderId();
+    
     const order = await Order.create({
+      id: orderId, // Use the generated order ID
       customerName, 
       customerEmail, 
       customerPhone, 
@@ -236,13 +247,15 @@ app.post('/api/orders', async (req, res) => {
 
     await transaction.commit();
 
-    console.log(`[API] Order created with ID: ${order.id}`);
+    console.log(`[API] Order created with ID: ${orderId}`);
 
     // Admin notification
-    const notifyTo = process.env.NOTIFY_EMAIL || 'onboarding@resend.dev';
-    if (emailConfigured) {
+    const notifyTo = process.env.NOTIFY_EMAIL;
+    if (emailConfigured && notifyTo) {
+      console.log(`Sending admin notification to: ${notifyTo}`);
+      
       const adminEmailContent = [
-        `New order received — #${order.id}`,
+        `New order received — #${orderId}`,
         `Name: ${customerName}`,
         `Phone: ${customerPhone || 'N/A'}`,
         `Email: ${customerEmail || 'N/A'}`,
@@ -257,31 +270,33 @@ app.post('/api/orders', async (req, res) => {
         const { data, error } = await resend.emails.send({
           from: 'Desi Aura <onboarding@resend.dev>',
           to: [notifyTo],
-          subject: `New order #${order.id}`,
+          subject: `New order #${orderId}`,
           text: adminEmailContent
         });
         
         if (error) {
           console.error('❌ Failed to send admin notification:', error);
         } else {
-          console.log('✅ Admin notification sent successfully:', data.id);
+          console.log('✅ Admin notification sent successfully to:', notifyTo, 'Email ID:', data.id);
         }
       } catch (err) {
         console.error('❌ Failed to send admin notification:', err);
       }
     } else {
-      console.warn('Email not configured; skipping admin email.');
+      console.warn('Email not configured or NOTIFY_EMAIL not set; skipping admin email.');
     }
 
     // Customer order confirmation email
     if (emailConfigured && customerEmail) {
+      console.log(`Sending customer confirmation to: ${customerEmail}`);
+      
       const customerEmailContent = [
         `Dear ${customerName},`,
         ``,
         `Thank you for your order with Desi Aura!`,
         ``,
         `Order Details:`,
-        `Order ID: #${order.id}`,
+        `Order ID: #${orderId}`,
         ``,
         `Items:`,
         ...detailedItems.map(i => `${i.quantity}x ${i.name} - ₹${i.lineTotal.toFixed(2)}`),
@@ -305,23 +320,23 @@ app.post('/api/orders', async (req, res) => {
         const { data, error } = await resend.emails.send({
           from: 'Desi Aura <onboarding@resend.dev>',
           to: [customerEmail],
-          subject: `Order Confirmation - Desi Aura #${order.id}`,
+          subject: `Order Confirmation - Desi Aura #${orderId}`,
           text: customerEmailContent
         });
         
         if (error) {
           console.error('❌ Failed to send customer confirmation:', error);
         } else {
-          console.log('✅ Customer confirmation sent successfully:', data.id);
+          console.log('✅ Customer confirmation sent successfully to:', customerEmail, 'Email ID:', data.id);
         }
       } catch (err) {
         console.error('❌ Failed to send customer confirmation:', err);
       }
     } else {
-      console.warn('Email not configured; skipping customer email.');
+      console.warn('Email not configured or customer email not provided; skipping customer email.');
     }
 
-    res.json({ success: true, orderId: order.id });
+    res.json({ success: true, orderId: orderId });
     
   } catch (err) {
     await transaction.rollback();
