@@ -4,7 +4,7 @@ require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 const { sequelize, Product, Order } = require('./models');
 
 const PORT = process.env.PORT || 10000; // Render uses port 10000
@@ -23,110 +23,17 @@ app.use((req, res, next) => {
   next();
 });
 
-// Gmail transporter configuration
-let transporter;
+// Initialize Resend
+const resend = new Resend(process.env.RESEND_API_KEY);
 let emailConfigured = false;
 
-// Initialize Gmail transporter
-async function initializeGmailTransporter() {
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
-    console.warn('GMAIL_USER or GMAIL_PASS not set. Email notifications will not work.');
-    return;
-  }
-  
-  // Remove any spaces from the password
-  const sanitizedPassword = process.env.GMAIL_PASS.replace(/\s+/g, '');
-  
-  console.log('Initializing Gmail transporter...');
-  console.log(`GMAIL_USER: ${process.env.GMAIL_USER}`);
-  console.log(`GMAIL_PASS length: ${sanitizedPassword.length} characters`);
-  
-  // Try multiple Gmail configurations with different settings
-  const configs = [
-    // Configuration 1: Gmail with explicit SSL and longer timeouts
-    {
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: { 
-        user: process.env.GMAIL_USER, 
-        pass: sanitizedPassword 
-      },
-      connectionTimeout: 30000,
-      socketTimeout: 30000,
-      greetingTimeout: 30000,
-      tls: {
-        rejectUnauthorized: false,
-        minVersion: 'TLSv1.2'
-      },
-      debug: true,
-      logger: true
-    },
-    // Configuration 2: Gmail with STARTTLS and longer timeouts
-    {
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      requireTLS: true,
-      auth: { 
-        user: process.env.GMAIL_USER, 
-        pass: sanitizedPassword 
-      },
-      connectionTimeout: 30000,
-      socketTimeout: 30000,
-      greetingTimeout: 30000,
-      tls: {
-        rejectUnauthorized: false,
-        minVersion: 'TLSv1.2'
-      },
-      debug: true,
-      logger: true
-    },
-    // Configuration 3: Gmail service with proxy settings
-    {
-      service: 'gmail',
-      auth: { 
-        user: process.env.GMAIL_USER, 
-        pass: sanitizedPassword 
-      },
-      connectionTimeout: 30000,
-      socketTimeout: 30000,
-      tls: {
-        rejectUnauthorized: false
-      },
-      debug: true,
-      logger: true
-    }
-  ];
-  
-  // Try each configuration
-  for (let i = 0; i < configs.length; i++) {
-    try {
-      console.log(`\n=== Trying Gmail configuration ${i + 1} ===`);
-      transporter = nodemailer.createTransport(configs[i]);
-      
-      // Test the connection
-      console.log('Verifying connection...');
-      await transporter.verify();
-      emailConfigured = true;
-      console.log(`\n✅ Gmail transporter configured successfully with configuration ${i + 1}`);
-      return;
-    } catch (error) {
-      console.error(`❌ Gmail configuration ${i + 1} failed:`, error.message);
-      console.error('Full error:', error);
-    }
-  }
-  
-  console.error('\n❌ All Gmail configurations failed. Email notifications will not work.');
-  console.log('\nTroubleshooting tips:');
-  console.log('1. Make sure you are using an App Password (not your regular password)');
-  console.log('2. Enable "Less secure app access" in your Google account settings');
-  console.log('3. Check if Google is blocking access (look for security alerts)');
-  console.log('4. Verify your environment variables are correctly set in Render');
+// Check email configuration
+if (process.env.RESEND_API_KEY) {
+  emailConfigured = true;
+  console.log('✅ Resend email service configured');
+} else {
+  console.warn('⚠️ RESEND_API_KEY not set. Email notifications will not work.');
 }
-
-// Initialize transporter
-initializeGmailTransporter();
 
 // Sync DB and run seed if needed
 (async () => {
@@ -188,30 +95,35 @@ app.get('/api', (req, res) => {
 // Test email endpoint
 app.get('/api/test-email', async (req, res) => {
   try {
-    if (!emailConfigured || !transporter) {
+    if (!emailConfigured) {
       return res.status(500).json({ 
-        error: 'Email transporter not configured',
+        error: 'Email service not configured',
         emailConfigured: emailConfigured
       });
     }
     
-    const testEmail = process.env.NOTIFY_EMAIL || process.env.GMAIL_USER;
+    const testEmail = process.env.NOTIFY_EMAIL || 'onboarding@resend.dev';
     
-    const mailOptions = {
-      from: process.env.GMAIL_USER,
-      to: testEmail,
+    const { data, error } = await resend.emails.send({
+      from: 'Desi Aura <onboarding@resend.dev>',
+      to: [testEmail],
       subject: 'Test Email from Desi Aura',
       text: 'This is a test email from Desi Aura backend. If you receive this, email configuration is working correctly.'
-    };
+    });
     
-    console.log('\n=== Sending test email ===');
-    const result = await transporter.sendMail(mailOptions);
-    console.log('✅ Test email sent successfully:', result.messageId);
+    if (error) {
+      console.error('❌ Error sending test email:', error);
+      return res.status(500).json({ 
+        error: 'Failed to send test email',
+        details: error.message
+      });
+    }
     
+    console.log('✅ Test email sent successfully:', data.id);
     res.json({ 
       success: true, 
       message: 'Test email sent successfully',
-      messageId: result.messageId
+      emailId: data.id
     });
   } catch (error) {
     console.error('❌ Error sending test email:', error);
@@ -327,8 +239,8 @@ app.post('/api/orders', async (req, res) => {
     console.log(`[API] Order created with ID: ${order.id}`);
 
     // Admin notification
-    const notifyTo = process.env.NOTIFY_EMAIL || process.env.GMAIL_USER;
-    if (emailConfigured && transporter && notifyTo) {
+    const notifyTo = process.env.NOTIFY_EMAIL || 'onboarding@resend.dev';
+    if (emailConfigured) {
       const adminEmailContent = [
         `New order received — #${order.id}`,
         `Name: ${customerName}`,
@@ -342,16 +254,18 @@ app.post('/api/orders', async (req, res) => {
       ].join('\n');
 
       try {
-        const adminMailOptions = {
-          from: process.env.GMAIL_USER,
-          to: notifyTo,
+        const { data, error } = await resend.emails.send({
+          from: 'Desi Aura <onboarding@resend.dev>',
+          to: [notifyTo],
           subject: `New order #${order.id}`,
           text: adminEmailContent
-        };
+        });
         
-        console.log('\n=== Sending admin notification ===');
-        await transporter.sendMail(adminMailOptions);
-        console.log('✅ Admin notification sent successfully');
+        if (error) {
+          console.error('❌ Failed to send admin notification:', error);
+        } else {
+          console.log('✅ Admin notification sent successfully:', data.id);
+        }
       } catch (err) {
         console.error('❌ Failed to send admin notification:', err);
       }
@@ -360,7 +274,7 @@ app.post('/api/orders', async (req, res) => {
     }
 
     // Customer order confirmation email
-    if (emailConfigured && transporter && customerEmail) {
+    if (emailConfigured && customerEmail) {
       const customerEmailContent = [
         `Dear ${customerName},`,
         ``,
@@ -388,16 +302,18 @@ app.post('/api/orders', async (req, res) => {
       ].join('\n');
 
       try {
-        const customerMailOptions = {
-          from: process.env.GMAIL_USER,
-          to: customerEmail,
+        const { data, error } = await resend.emails.send({
+          from: 'Desi Aura <onboarding@resend.dev>',
+          to: [customerEmail],
           subject: `Order Confirmation - Desi Aura #${order.id}`,
           text: customerEmailContent
-        };
+        });
         
-        console.log('\n=== Sending customer confirmation ===');
-        await transporter.sendMail(customerMailOptions);
-        console.log('✅ Customer confirmation sent successfully');
+        if (error) {
+          console.error('❌ Failed to send customer confirmation:', error);
+        } else {
+          console.log('✅ Customer confirmation sent successfully:', data.id);
+        }
       } catch (err) {
         console.error('❌ Failed to send customer confirmation:', err);
       }
