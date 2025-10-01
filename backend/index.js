@@ -4,7 +4,7 @@ require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 const { sequelize, Product, Order } = require('./models');
 
 const PORT = process.env.PORT || 10000; // Render uses port 10000
@@ -23,16 +23,30 @@ app.use((req, res, next) => {
   next();
 });
 
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Mailtrap transporter
+let transporter;
 let emailConfigured = false;
 
-// Check email configuration
-if (process.env.RESEND_API_KEY) {
-  emailConfigured = true;
-  console.log('✅ Resend email service configured');
+if (process.env.MAILTRAP_USER && process.env.MAILTRAP_PASS) {
+  transporter = nodemailer.createTransport({
+    host: "live.smtp.mailtrap.io",
+    port: 587,
+    auth: {
+      user: process.env.MAILTRAP_USER,
+      pass: process.env.MAILTRAP_PASS
+    }
+  });
+  
+  transporter.verify((error, success) => {
+    if (error) {
+      console.error('❌ Mailtrap configuration failed:', error);
+    } else {
+      emailConfigured = true;
+      console.log('✅ Mailtrap email service configured');
+    }
+  });
 } else {
-  console.warn('⚠️ RESEND_API_KEY not set. Email notifications will not work.');
+  console.warn('⚠️ MAILTRAP_USER or MAILTRAP_PASS not set. Email notifications will not work.');
 }
 
 // Generate a random order ID
@@ -44,7 +58,7 @@ function generateOrderId() {
 // Sync DB and run seed if needed
 (async () => {
   try {
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ force: true }); // Use force: true to recreate tables with new structure
     console.log('DB synced');
     
     // Check if we need to seed the database
@@ -108,29 +122,22 @@ app.get('/api/test-email', async (req, res) => {
       });
     }
     
-    const testEmail = process.env.NOTIFY_EMAIL || 'onboarding@resend.dev';
+    const testEmail = process.env.NOTIFY_EMAIL || 'vivekkomirelli@gmail.com';
     console.log(`Sending test email to: ${testEmail}`);
     
-    const { data, error } = await resend.emails.send({
-      from: 'Desi Aura <onboarding@resend.dev>',
-      to: [testEmail],
+    const mailOptions = {
+      from: 'hello@demomailtrap.com',
+      to: testEmail,
       subject: 'Test Email from Desi Aura',
       text: 'This is a test email from Desi Aura backend. If you receive this, email configuration is working correctly.'
-    });
+    };
     
-    if (error) {
-      console.error('❌ Error sending test email:', error);
-      return res.status(500).json({ 
-        error: 'Failed to send test email',
-        details: error.message
-      });
-    }
-    
-    console.log('✅ Test email sent successfully:', data.id);
+    const result = await transporter.sendMail(mailOptions);
+    console.log('✅ Test email sent successfully:', result.messageId);
     res.json({ 
       success: true, 
       message: 'Test email sent successfully',
-      emailId: data.id
+      emailId: result.messageId
     });
   } catch (error) {
     console.error('❌ Error sending test email:', error);
@@ -250,8 +257,8 @@ app.post('/api/orders', async (req, res) => {
     console.log(`[API] Order created with ID: ${orderId}`);
 
     // Admin notification
-    const notifyTo = process.env.NOTIFY_EMAIL;
-    if (emailConfigured && notifyTo) {
+    const notifyTo = process.env.NOTIFY_EMAIL || 'vivekkomirelli@gmail.com';
+    if (emailConfigured) {
       console.log(`Sending admin notification to: ${notifyTo}`);
       
       const adminEmailContent = [
@@ -267,23 +274,20 @@ app.post('/api/orders', async (req, res) => {
       ].join('\n');
 
       try {
-        const { data, error } = await resend.emails.send({
-          from: 'Desi Aura <onboarding@resend.dev>',
-          to: [notifyTo],
+        const mailOptions = {
+          from: 'hello@demomailtrap.com',
+          to: notifyTo,
           subject: `New order #${orderId}`,
           text: adminEmailContent
-        });
+        };
         
-        if (error) {
-          console.error('❌ Failed to send admin notification:', error);
-        } else {
-          console.log('✅ Admin notification sent successfully to:', notifyTo, 'Email ID:', data.id);
-        }
+        const result = await transporter.sendMail(mailOptions);
+        console.log('✅ Admin notification sent successfully to:', notifyTo, 'Message ID:', result.messageId);
       } catch (err) {
         console.error('❌ Failed to send admin notification:', err);
       }
     } else {
-      console.warn('Email not configured or NOTIFY_EMAIL not set; skipping admin email.');
+      console.warn('Email not configured; skipping admin email.');
     }
 
     // Customer order confirmation email
@@ -317,18 +321,15 @@ app.post('/api/orders', async (req, res) => {
       ].join('\n');
 
       try {
-        const { data, error } = await resend.emails.send({
-          from: 'Desi Aura <onboarding@resend.dev>',
-          to: [customerEmail],
+        const mailOptions = {
+          from: 'hello@demomailtrap.com',
+          to: customerEmail,
           subject: `Order Confirmation - Desi Aura #${orderId}`,
           text: customerEmailContent
-        });
+        };
         
-        if (error) {
-          console.error('❌ Failed to send customer confirmation:', error);
-        } else {
-          console.log('✅ Customer confirmation sent successfully to:', customerEmail, 'Email ID:', data.id);
-        }
+        const result = await transporter.sendMail(mailOptions);
+        console.log('✅ Customer confirmation sent successfully to:', customerEmail, 'Message ID:', result.messageId);
       } catch (err) {
         console.error('❌ Failed to send customer confirmation:', err);
       }
