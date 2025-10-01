@@ -41,6 +41,11 @@ const Product = sequelize.define('Product', {
 
 
 const Order = sequelize.define('Order', {
+  id: {
+    type: DataTypes.STRING, // Change to STRING for custom order IDs
+    primaryKey: true,
+    allowNull: false
+  },
   customerName: { type: DataTypes.STRING, allowNull: false },
   customerEmail: { type: DataTypes.STRING },
   customerPhone: { type: DataTypes.STRING },
