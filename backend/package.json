@@ -13,9 +13,9 @@
     "sqlite3": "^5.1.6",
     "pg": "^8.10.0",
     "pg-hstore": "^2.3.4",
-    "nodemailer": "^6.9.3",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
-    "body-parser": "^1.20.2"
+    "body-parser": "^1.20.2",
+    "resend": "^3.2.0"
   }
 }
