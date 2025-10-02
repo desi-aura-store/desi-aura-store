@@ -28,6 +28,13 @@ let emailConfigured = false;
 
 async function setupBrevoTransport() {
   try {
+    // Check if required environment variables are set
+    if (!process.env.BREVO_EMAIL || !process.env.BREVO_API_KEY) {
+      console.error('❌ Brevo credentials not found in environment variables');
+      console.log('Please ensure BREVO_EMAIL and BREVO_API_KEY are set in your .env file');
+      return;
+    }
+    
     // Create a transporter object using Brevo SMTP transport
     transporter = nodemailer.createTransport({
       host: 'smtp-relay.brevo.com',
@@ -94,7 +101,8 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     version: '1.0.0',
     uptime: process.uptime(),
-    emailConfigured: emailConfigured
+    emailConfigured: emailConfigured,
+    brevoEmail: process.env.BREVO_EMAIL ? 'configured' : 'not configured'
   });
 });
 
@@ -124,7 +132,8 @@ app.get('/api/test-email', async (req, res) => {
     if (!emailConfigured) {
       return res.status(500).json({
         error: 'Email service not configured',
-        emailConfigured: emailConfigured
+        emailConfigured: emailConfigured,
+        brevoEmail: process.env.BREVO_EMAIL ? 'configured' : 'not configured'
       });
     }
 
