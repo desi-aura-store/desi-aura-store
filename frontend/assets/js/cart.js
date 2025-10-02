@@ -1,5 +1,5 @@
-// frontend/assets/js/cart.js
 const CART_KEY = 'ecom_cart_v1';
+const RECENT_ORDERS_KEY = 'recent_orders';
 
 function loadCart() {
   const raw = localStorage.getItem(CART_KEY);
@@ -44,5 +44,58 @@ function updateCartCount() {
   if (badge) badge.textContent = count;
 }
 
+// ---- New: Recent Orders Management ----
+function saveRecentOrder(order) {
+  const recentOrders = JSON.parse(localStorage.getItem(RECENT_ORDERS_KEY) || '[]');
+  
+  // Check if order already exists
+  const existingIndex = recentOrders.findIndex(o => o.id === order.id);
+  if (existingIndex !== -1) {
+    // Update existing order
+    recentOrders[existingIndex] = order;
+  } else {
+    // Add new order at the beginning
+    recentOrders.unshift(order);
+  }
+  
+  // Keep only the 5 most recent orders
+  if (recentOrders.length > 5) {
+    recentOrders.splice(5);
+  }
+  
+  localStorage.setItem(RECENT_ORDERS_KEY, JSON.stringify(recentOrders));
+}
+
+function loadRecentOrders() {
+  return JSON.parse(localStorage.getItem(RECENT_ORDERS_KEY) || '[]');
+}
+
+// ---- New: Order Tracking ----
+function trackOrder(orderId) {
+  if (orderId) {
+    window.location.href = `/order-status.html?id=${orderId}`;
+  } else {
+    alert('Please enter a valid order ID');
+  }
+}
+
+// ---- New: Save Order After Checkout ----
+function saveOrderAfterCheckout(orderData) {
+  // Save order to recent orders
+  saveRecentOrder({
+    id: orderData.orderId,
+    date: new Date().toISOString(),
+    total: orderData.total,
+    status: 'pending'
+  });
+  
+  // Clear cart
+  clearCart();
+}
+
 // Ensure badge updates when page loads
 document.addEventListener("DOMContentLoaded", updateCartCount);
+
+// Make functions available globally
+window.saveOrderAfterCheckout = saveOrderAfterCheckout;
+window.trackOrder = trackOrder;
