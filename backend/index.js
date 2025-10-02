@@ -1,4 +1,3 @@
-// backend/index.js
 const path = require("path");
 require('dotenv').config();
 const express = require("express");
@@ -23,36 +22,48 @@ app.use((req, res, next) => {
   next();
 });
 
-// Initialize Mailtrap transporter
+// Initialize Ethereal transporter
 let transporter;
 let emailConfigured = false;
+let etherealConfig = null;
 
-if (process.env.MAILTRAP_USER && process.env.MAILTRAP_PASS) {
-  transporter = nodemailer.createTransport({
-    host: "sandbox.smtp.mailtrap.io",
-    port: 5525,
-    auth: {
-      user: process.env.MAILTRAP_USER,
-      pass: process.env.MAILTRAP_PASS
-    }
-  });
-  
-  transporter.verify((error, success) => {
-    if (error) {
-      console.error('❌ Mailtrap configuration failed:', error);
-    } else {
-      emailConfigured = true;
-      console.log('✅ Mailtrap email service configured');
-    }
-  });
-} else {
-  console.warn('⚠️ MAILTRAP_USER or MAILTRAP_PASS not set. Email notifications will not work.');
+async function setupEtherealTransport() {
+  try {
+    // Generate test SMTP service account from ethereal.email
+    etherealConfig = await nodemailer.createTestAccount();
+    
+    // Create a transporter object using the default SMTP transport
+    transporter = nodemailer.createTransport({
+      host: 'smtp.ethereal.email',
+      port: 587,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: etherealConfig.user, // generated ethereal user
+        pass: etherealConfig.pass  // generated ethereal password
+      }
+    });
+
+    transporter.verify((error, success) => {
+      if (error) {
+        console.error('❌ Ethereal configuration failed:', error);
+      } else {
+        emailConfigured = true;
+        console.log('✅ Ethereal email service configured');
+        console.log('📧 Ethereal web interface:', nodemailer.getTestMessageUrl(etherealConfig));
+      }
+    });
+  } catch (error) {
+    console.error('❌ Failed to setup Ethereal:', error);
+  }
 }
+
+// Setup Ethereal transport
+setupEtherealTransport();
 
 // Generate a random order ID
 function generateOrderId() {
-  return 'ORD-' + Math.random().toString(36).substring(2, 15).toUpperCase() + 
-         '-' + Date.now().toString(36).substring(4, 10).toUpperCase();
+  return 'ORD-' + Math.random().toString(36).substring(2, 15).toUpperCase() +
+    '-' + Date.now().toString(36).substring(4, 10).toUpperCase();
 }
 
 // Sync DB and run seed if needed
@@ -60,7 +71,7 @@ function generateOrderId() {
   try {
     await sequelize.sync({ force: true }); // Use force: true to recreate tables with new structure
     console.log('DB synced');
-    
+
     // Check if we need to seed the database
     const productCount = await Product.count();
     if (productCount === 0) {
@@ -116,32 +127,35 @@ app.get('/api', (req, res) => {
 app.get('/api/test-email', async (req, res) => {
   try {
     if (!emailConfigured) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Email service not configured',
         emailConfigured: emailConfigured
       });
     }
-    
+
     const testEmail = process.env.NOTIFY_EMAIL || 'vivekkomirelli@gmail.com';
     console.log(`Sending test email to: ${testEmail}`);
-    
+
     const mailOptions = {
-      from: 'hello@demomailtrap.com',
+      from: `"Desi Aura" <${etherealConfig.user}>`,
       to: testEmail,
       subject: 'Test Email from Desi Aura',
       text: 'This is a test email from Desi Aura backend. If you receive this, email configuration is working correctly.'
     };
-    
+
     const result = await transporter.sendMail(mailOptions);
     console.log('✅ Test email sent successfully:', result.messageId);
-    res.json({ 
-      success: true, 
+    console.log('📧 Preview URL:', nodemailer.getTestMessageUrl(result));
+    
+    res.json({
+      success: true,
       message: 'Test email sent successfully',
-      emailId: result.messageId
+      emailId: result.messageId,
+      previewUrl: nodemailer.getTestMessageUrl(result)
     });
   } catch (error) {
     console.error('❌ Error sending test email:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to send test email',
       details: error.message
     });
@@ -152,7 +166,7 @@ app.get('/api/test-email', async (req, res) => {
 app.get('/api/products', async (req, res) => {
   try {
     console.log('[API] /api/products called with query:', req.query);
-    
+
     const where = {};
     if (req.query.category) where.category = req.query.category;
 
@@ -163,7 +177,7 @@ app.get('/api/products', async (req, res) => {
 
     const products = await Product.findAll({ where, limit, offset });
     console.log(`[API] Found ${products.length} products`);
-    
+
     return res.json(products);
   } catch (err) {
     console.error('[ERR] /api/products', err);
@@ -174,14 +188,14 @@ app.get('/api/products', async (req, res) => {
 app.get('/api/products/:id', async (req, res) => {
   try {
     console.log(`[API] /api/products/${req.params.id} called`);
-    
+
     const p = await Product.findByPk(req.params.id);
-    
+
     if (!p) {
       console.log(`[API] Product with ID ${req.params.id} not found`);
       return res.status(404).json({ error: 'Not found' });
     }
-    
+
     console.log(`[API] Found product:`, p.name);
     res.json(p);
   } catch (err) {
@@ -193,43 +207,43 @@ app.get('/api/products/:id', async (req, res) => {
 // Orders endpoints
 app.post('/api/orders', async (req, res) => {
   const transaction = await sequelize.transaction();
-  
+
   try {
     console.log('[API] /api/orders called with body:', req.body);
-    
+
     const { customerName, customerEmail, customerPhone, address, items } = req.body;
-    
+
     if (!customerName || !address || !items || !Array.isArray(items) || items.length === 0) {
       await transaction.rollback();
       return res.status(400).json({ error: 'Invalid order payload' });
     }
 
     const productIds = items.map(item => item.productId);
-    
+
     const products = await Product.findAll({
       where: { id: productIds },
       transaction
     });
-    
+
     const productMap = {};
     products.forEach(product => {
       productMap[product.id] = product;
     });
-    
+
     let total = 0;
     const detailedItems = [];
-    
+
     for (const item of items) {
       const product = productMap[item.productId];
       if (!product) {
         await transaction.rollback();
         return res.status(400).json({ error: `Product ${item.productId} not found` });
       }
-      
+
       const qty = parseInt(item.quantity) || 1;
       const lineTotal = Number(product.price) * qty;
       total += lineTotal;
-      
+
       detailedItems.push({
         productId: product.id,
         name: product.name,
@@ -241,12 +255,12 @@ app.post('/api/orders', async (req, res) => {
 
     // Generate a random order ID
     const orderId = generateOrderId();
-    
+
     const order = await Order.create({
       id: orderId, // Use the generated order ID
-      customerName, 
-      customerEmail, 
-      customerPhone, 
+      customerName,
+      customerEmail,
+      customerPhone,
       address,
       items: JSON.stringify(detailedItems),
       total
@@ -260,7 +274,7 @@ app.post('/api/orders', async (req, res) => {
     const notifyTo = process.env.NOTIFY_EMAIL || 'vivekkomirelli@gmail.com';
     if (emailConfigured) {
       console.log(`Sending admin notification to: ${notifyTo}`);
-      
+
       const adminEmailContent = [
         `New order received — #${orderId}`,
         `Name: ${customerName}`,
@@ -275,14 +289,15 @@ app.post('/api/orders', async (req, res) => {
 
       try {
         const mailOptions = {
-          from: 'hello@demomailtrap.com',
+          from: `"Desi Aura" <${etherealConfig.user}>`,
           to: notifyTo,
           subject: `New order #${orderId}`,
           text: adminEmailContent
         };
-        
+
         const result = await transporter.sendMail(mailOptions);
         console.log('✅ Admin notification sent successfully to:', notifyTo, 'Message ID:', result.messageId);
+        console.log('📧 Preview URL:', nodemailer.getTestMessageUrl(result));
       } catch (err) {
         console.error('❌ Failed to send admin notification:', err);
       }
@@ -293,7 +308,7 @@ app.post('/api/orders', async (req, res) => {
     // Customer order confirmation email
     if (emailConfigured && customerEmail) {
       console.log(`Sending customer confirmation to: ${customerEmail}`);
-      
+
       const customerEmailContent = [
         `Dear ${customerName},`,
         ``,
@@ -322,14 +337,15 @@ app.post('/api/orders', async (req, res) => {
 
       try {
         const mailOptions = {
-          from: 'hello@demomailtrap.com',
+          from: `"Desi Aura" <${etherealConfig.user}>`,
           to: customerEmail,
           subject: `Order Confirmation - Desi Aura #${orderId}`,
           text: customerEmailContent
         };
-        
+
         const result = await transporter.sendMail(mailOptions);
         console.log('✅ Customer confirmation sent successfully to:', customerEmail, 'Message ID:', result.messageId);
+        console.log('📧 Preview URL:', nodemailer.getTestMessageUrl(result));
       } catch (err) {
         console.error('❌ Failed to send customer confirmation:', err);
       }
@@ -338,7 +354,7 @@ app.post('/api/orders', async (req, res) => {
     }
 
     res.json({ success: true, orderId: orderId });
-    
+
   } catch (err) {
     await transaction.rollback();
     console.error('[ERR] /api/orders', err);
@@ -349,25 +365,25 @@ app.post('/api/orders', async (req, res) => {
 app.get('/api/orders/:id', async (req, res) => {
   try {
     console.log(`[API] /api/orders/${req.params.id} called`);
-    
+
     const order = await Order.findByPk(req.params.id);
-    
+
     if (!order) {
       console.log(`[API] Order with ID ${req.params.id} not found`);
       return res.status(404).json({ error: 'Order not found' });
     }
-    
+
     const parsedItems = JSON.parse(order.items);
-    res.json({ 
-      id: order.id, 
-      customerName: order.customerName, 
-      customerEmail: order.customerEmail, 
-      customerPhone: order.customerPhone, 
-      address: order.address, 
-      items: parsedItems, 
-      total: order.total, 
-      status: order.status, 
-      createdAt: order.createdAt 
+    res.json({
+      id: order.id,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
+      address: order.address,
+      items: parsedItems,
+      total: order.total,
+      status: order.status,
+      createdAt: order.createdAt
     });
   } catch (err) {
     console.error(`[ERR] /api/orders/${req.params.id}`, err);
