@@ -22,43 +22,38 @@ app.use((req, res, next) => {
   next();
 });
 
-// Initialize Ethereal transporter
+// Initialize Brevo transporter
 let transporter;
 let emailConfigured = false;
-let etherealConfig = null;
 
-async function setupEtherealTransport() {
+async function setupBrevoTransport() {
   try {
-    // Generate test SMTP service account from ethereal.email
-    etherealConfig = await nodemailer.createTestAccount();
-    
-    // Create a transporter object using the default SMTP transport
+    // Create a transporter object using Brevo SMTP transport
     transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
+      host: 'smtp-relay.brevo.com',
       port: 587,
       secure: false, // true for 465, false for other ports
       auth: {
-        user: etherealConfig.user, // generated ethereal user
-        pass: etherealConfig.pass  // generated ethereal password
+        user: process.env.BREVO_EMAIL, // Your Brevo email
+        pass: process.env.BREVO_API_KEY // Your Brevo API key
       }
     });
 
     transporter.verify((error, success) => {
       if (error) {
-        console.error('❌ Ethereal configuration failed:', error);
+        console.error('❌ Brevo configuration failed:', error);
       } else {
         emailConfigured = true;
-        console.log('✅ Ethereal email service configured');
-        console.log('📧 Ethereal web interface:', nodemailer.getTestMessageUrl(etherealConfig));
+        console.log('✅ Brevo email service configured');
       }
     });
   } catch (error) {
-    console.error('❌ Failed to setup Ethereal:', error);
+    console.error('❌ Failed to setup Brevo:', error);
   }
 }
 
-// Setup Ethereal transport
-setupEtherealTransport();
+// Setup Brevo transport
+setupBrevoTransport();
 
 // Generate a random order ID
 function generateOrderId() {
@@ -137,7 +132,7 @@ app.get('/api/test-email', async (req, res) => {
     console.log(`Sending test email to: ${testEmail}`);
 
     const mailOptions = {
-      from: `"Desi Aura" <${etherealConfig.user}>`,
+      from: `"Desi Aura" <${process.env.BREVO_EMAIL}>`,
       to: testEmail,
       subject: 'Test Email from Desi Aura',
       text: 'This is a test email from Desi Aura backend. If you receive this, email configuration is working correctly.'
@@ -145,13 +140,11 @@ app.get('/api/test-email', async (req, res) => {
 
     const result = await transporter.sendMail(mailOptions);
     console.log('✅ Test email sent successfully:', result.messageId);
-    console.log('📧 Preview URL:', nodemailer.getTestMessageUrl(result));
     
     res.json({
       success: true,
       message: 'Test email sent successfully',
-      emailId: result.messageId,
-      previewUrl: nodemailer.getTestMessageUrl(result)
+      emailId: result.messageId
     });
   } catch (error) {
     console.error('❌ Error sending test email:', error);
@@ -289,7 +282,7 @@ app.post('/api/orders', async (req, res) => {
 
       try {
         const mailOptions = {
-          from: `"Desi Aura" <${etherealConfig.user}>`,
+          from: `"Desi Aura" <${process.env.BREVO_EMAIL}>`,
           to: notifyTo,
           subject: `New order #${orderId}`,
           text: adminEmailContent
@@ -297,7 +290,6 @@ app.post('/api/orders', async (req, res) => {
 
         const result = await transporter.sendMail(mailOptions);
         console.log('✅ Admin notification sent successfully to:', notifyTo, 'Message ID:', result.messageId);
-        console.log('📧 Preview URL:', nodemailer.getTestMessageUrl(result));
       } catch (err) {
         console.error('❌ Failed to send admin notification:', err);
       }
@@ -337,7 +329,7 @@ app.post('/api/orders', async (req, res) => {
 
       try {
         const mailOptions = {
-          from: `"Desi Aura" <${etherealConfig.user}>`,
+          from: `"Desi Aura" <${process.env.BREVO_EMAIL}>`,
           to: customerEmail,
           subject: `Order Confirmation - Desi Aura #${orderId}`,
           text: customerEmailContent
@@ -345,7 +337,6 @@ app.post('/api/orders', async (req, res) => {
 
         const result = await transporter.sendMail(mailOptions);
         console.log('✅ Customer confirmation sent successfully to:', customerEmail, 'Message ID:', result.messageId);
-        console.log('📧 Preview URL:', nodemailer.getTestMessageUrl(result));
       } catch (err) {
         console.error('❌ Failed to send customer confirmation:', err);
       }
