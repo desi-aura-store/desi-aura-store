@@ -1003,3 +1003,17 @@ footer {
 .retry-btn:hover {
   background: var(--accent);
 }
+
+.footer-links {
+  margin-top: 15px;
+}
+
+.footer-links a {
+  color: var(--text-light);
+  margin: 0 10px;
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  text-decoration: underline;
+}
