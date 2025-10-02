@@ -3,7 +3,7 @@ require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const nodemailer = require("nodemailer");
+const axios = require("axios");
 const { sequelize, Product, Order } = require('./models');
 
 const PORT = process.env.PORT || 10000; // Render uses port 10000
@@ -22,122 +22,68 @@ app.use((req, res, next) => {
   next();
 });
 
-// Initialize Brevo transporter with multiple configuration options
-let transporter;
+// Initialize Brevo API client
 let emailConfigured = false;
 
-async function setupBrevoTransport() {
+function setupBrevoAPI() {
   try {
     // Check if required environment variables are set
-    if (!process.env.BREVO_EMAIL || !process.env.BREVO_API_KEY) {
-      console.error('❌ Brevo credentials not found in environment variables');
-      console.log('Please ensure BREVO_EMAIL and BREVO_API_KEY are set in your .env file');
-      return;
+    if (!process.env.BREVO_API_KEY) {
+      console.error('❌ BREVO_API_KEY not found in environment variables');
+      return false;
     }
     
-    console.log('🔧 Setting up Brevo transporter with credentials:');
-    console.log(`   Email: ${process.env.BREVO_EMAIL}`);
+    if (!process.env.BREVO_EMAIL) {
+      console.error('❌ BREVO_EMAIL not found in environment variables');
+      return false;
+    }
+    
+    console.log('✅ Brevo API configured');
+    console.log(`   Sender Email: ${process.env.BREVO_EMAIL}`);
     console.log(`   API Key: ${process.env.BREVO_API_KEY.substring(0, 8)}...`);
     
-    // Try multiple Brevo SMTP configurations
-    const configs = [
-      {
-        // Configuration 1: Standard SMTP
-        host: 'smtp-relay.brevo.com',
-        port: 587,
-        secure: false,
-        auth: {
-          user: process.env.BREVO_EMAIL,
-          pass: process.env.BREVO_API_KEY
-        },
-        tls: {
-          rejectUnauthorized: false
-        },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000
-      },
-      {
-        // Configuration 2: Alternative port
-        host: 'smtp-relay.brevo.com',
-        port: 2525,
-        secure: false,
-        auth: {
-          user: process.env.BREVO_EMAIL,
-          pass: process.env.BREVO_API_KEY
-        },
-        tls: {
-          rejectUnauthorized: false
-        },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000
-      },
-      {
-        // Configuration 3: SSL connection
-        host: 'smtp-relay.brevo.com',
-        port: 465,
-        secure: true,
-        auth: {
-          user: process.env.BREVO_EMAIL,
-          pass: process.env.BREVO_API_KEY
-        },
-        tls: {
-          rejectUnauthorized: false
-        },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000
-      }
-    ];
-
-    // Try each configuration
-    for (let i = 0; i < configs.length; i++) {
-      const config = configs[i];
-      console.log(`🔧 Trying configuration ${i + 1}: ${config.host}:${config.port} (secure: ${config.secure})`);
-      
-      try {
-        transporter = nodemailer.createTransporter(config);
-        
-        // Test the connection
-        await new Promise((resolve, reject) => {
-          transporter.verify((error, success) => {
-            if (error) {
-              console.error(`❌ Configuration ${i + 1} failed:`, error.message);
-              reject(error);
-            } else {
-              console.log(`✅ Configuration ${i + 1} successful!`);
-              resolve(success);
-            }
-          });
-        });
-        
-        // If we get here, the configuration worked
-        emailConfigured = true;
-        console.log('✅ Brevo email service configured successfully');
-        console.log(`   Using: ${config.host}:${config.port}`);
-        return;
-        
-      } catch (configError) {
-        console.error(`❌ Configuration ${i + 1} failed:`, configError.message);
-        if (i === configs.length - 1) {
-          // Last configuration failed
-          console.error('❌ All Brevo configurations failed');
-          console.error('   This might be due to:');
-          console.error('   1. Incorrect API key or email');
-          console.error('   2. Sender email not verified in Brevo');
-          console.error('   3. Network restrictions on Render');
-          console.error('   4. Brevo service outage');
-        }
-      }
-    }
+    emailConfigured = true;
+    return true;
   } catch (error) {
-    console.error('❌ Failed to setup Brevo:', error.message);
+    console.error('❌ Failed to setup Brevo API:', error.message);
+    return false;
   }
 }
 
-// Setup Brevo transport
-setupBrevoTransport();
+// Setup Brevo API
+setupBrevoAPI();
+
+// Function to send email using Brevo API
+async function sendEmailViaBrevoAPI(to, subject, textContent) {
+  try {
+    const response = await axios.post(
+      'https://api.brevo.com/v3/smtp/email',
+      {
+        sender: {
+          name: 'Desi Aura',
+          email: process.env.BREVO_EMAIL
+        },
+        to: [{ email: to }],
+        subject: subject,
+        textContent: textContent
+      },
+      {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': process.env.BREVO_API_KEY
+        }
+      }
+    );
+    
+    console.log('✅ Email sent successfully via Brevo API');
+    console.log(`   Message ID: ${response.data.messageId}`);
+    return { success: true, messageId: response.data.messageId };
+  } catch (error) {
+    console.error('❌ Failed to send email via Brevo API:', error.response?.data || error.message);
+    throw error;
+  }
+}
 
 // Generate a random order ID
 function generateOrderId() {
@@ -219,15 +165,11 @@ app.get('/api/test-email', async (req, res) => {
     const testEmail = process.env.NOTIFY_EMAIL || 'vivekkomirelli@gmail.com';
     console.log(`Sending test email to: ${testEmail}`);
 
-    const mailOptions = {
-      from: `"Desi Aura" <${process.env.BREVO_EMAIL}>`,
-      to: testEmail,
-      subject: 'Test Email from Desi Aura',
-      text: 'This is a test email from Desi Aura backend. If you receive this, email configuration is working correctly.'
-    };
-
-    const result = await transporter.sendMail(mailOptions);
-    console.log('✅ Test email sent successfully:', result.messageId);
+    const result = await sendEmailViaBrevoAPI(
+      testEmail,
+      'Test Email from Desi Aura',
+      'This is a test email from Desi Aura backend. If you receive this, email configuration is working correctly.'
+    );
     
     res.json({
       success: true,
@@ -238,7 +180,7 @@ app.get('/api/test-email', async (req, res) => {
     console.error('❌ Error sending test email:', error);
     res.status(500).json({
       error: 'Failed to send test email',
-      details: error.message
+      details: error.response?.data?.message || error.message
     });
   }
 });
@@ -369,15 +311,12 @@ app.post('/api/orders', async (req, res) => {
       ].join('\n');
 
       try {
-        const mailOptions = {
-          from: `"Desi Aura" <${process.env.BREVO_EMAIL}>`,
-          to: notifyTo,
-          subject: `New order #${orderId}`,
-          text: adminEmailContent
-        };
-
-        const result = await transporter.sendMail(mailOptions);
-        console.log('✅ Admin notification sent successfully to:', notifyTo, 'Message ID:', result.messageId);
+        await sendEmailViaBrevoAPI(
+          notifyTo,
+          `New order #${orderId}`,
+          adminEmailContent
+        );
+        console.log('✅ Admin notification sent successfully to:', notifyTo);
       } catch (err) {
         console.error('❌ Failed to send admin notification:', err);
       }
@@ -416,15 +355,12 @@ app.post('/api/orders', async (req, res) => {
       ].join('\n');
 
       try {
-        const mailOptions = {
-          from: `"Desi Aura" <${process.env.BREVO_EMAIL}>`,
-          to: customerEmail,
-          subject: `Order Confirmation - Desi Aura #${orderId}`,
-          text: customerEmailContent
-        };
-
-        const result = await transporter.sendMail(mailOptions);
-        console.log('✅ Customer confirmation sent successfully to:', customerEmail, 'Message ID:', result.messageId);
+        await sendEmailViaBrevoAPI(
+          customerEmail,
+          `Order Confirmation - Desi Aura #${orderId}`,
+          customerEmailContent
+        );
+        console.log('✅ Customer confirmation sent successfully to:', customerEmail);
       } catch (err) {
         console.error('❌ Failed to send customer confirmation:', err);
       }
