@@ -21,6 +21,7 @@ app.use((req, res, next) => {
   console.log(`[REQ] ${new Date().toISOString()} ${req.method} ${req.url}`);
   next();
 });
+
 // Initialize Brevo API client
 let emailConfigured = false;
 
@@ -53,7 +54,7 @@ function setupBrevoAPI() {
 setupBrevoAPI();
 
 // Function to send email using Brevo API
-async function sendEmailViaBrevoAPI(to, subject, textContent) {
+async function sendEmailViaBrevoAPI(to, subject, textContent, htmlContent) {
   try {
     const response = await axios.post(
       'https://api.brevo.com/v3/smtp/email',
@@ -64,7 +65,8 @@ async function sendEmailViaBrevoAPI(to, subject, textContent) {
         },
         to: [{ email: to }],
         subject: subject,
-        textContent: textContent
+        textContent: textContent,
+        htmlContent: htmlContent
       },
       {
         headers: {
@@ -84,10 +86,9 @@ async function sendEmailViaBrevoAPI(to, subject, textContent) {
   }
 }
 
-// Generate a random order ID
+// Generate a shorter order ID (8 characters)
 function generateOrderId() {
-  return 'ORD-' + Math.random().toString(36).substring(2, 15).toUpperCase() +
-    '-' + Date.now().toString(36).substring(4, 10).toUpperCase();
+  return 'ORD-' + Math.random().toString(36).substring(2, 10).toUpperCase();
 }
 
 // Sync DB and run seed if needed
@@ -275,7 +276,7 @@ app.post('/api/orders', async (req, res) => {
       });
     }
 
-    // Generate a random order ID
+    // Generate a shorter order ID (8 characters)
     const orderId = generateOrderId();
 
     const order = await Order.create({
@@ -306,14 +307,31 @@ app.post('/api/orders', async (req, res) => {
         `Total: ₹${total.toFixed(2)}`,
         '',
         'Items:',
-        ...detailedItems.map(i => `${i.quantity}x ${i.name} — ₹${i.lineTotal.toFixed(2)}`)
+        ...detailedItems.map(i => `${i.quantity}x ${i.name} — ₹${i.lineTotal.toFixed(2)}`),
+        '',
+        `View order details: https://desi-aura-store.vercel.app/order-status.html?id=${orderId}`
       ].join('\n');
+
+      const adminEmailHtml = `
+        <h2>New order received — #${orderId}</h2>
+        <p><strong>Name:</strong> ${customerName}</p>
+        <p><strong>Phone:</strong> ${customerPhone || 'N/A'}</p>
+        <p><strong>Email:</strong> ${customerEmail || 'N/A'}</p>
+        <p><strong>Address:</strong> ${address}</p>
+        <p><strong>Total:</strong> ₹${total.toFixed(2)}</p>
+        <h3>Items:</h3>
+        <ul>
+          ${detailedItems.map(i => `<li>${i.quantity}x ${i.name} — ₹${i.lineTotal.toFixed(2)}</li>`).join('')}
+        </ul>
+        <p><a href="https://desi-aura-store.vercel.app/order-status.html?id=${orderId}">View order details</a></p>
+      `;
 
       try {
         await sendEmailViaBrevoAPI(
           notifyTo,
           `New order #${orderId}`,
-          adminEmailContent
+          adminEmailContent,
+          adminEmailHtml
         );
         console.log('✅ Admin notification sent successfully to:', notifyTo);
       } catch (err) {
@@ -347,17 +365,39 @@ app.post('/api/orders', async (req, res) => {
         ``,
         `We'll process your order soon and deliver it to your address.`,
         ``,
+        `Track your order: https://desi-aura-store.vercel.app/order-status.html?id=${orderId}`,
+        ``,
         `Thank you for shopping with Desi Aura!`,
         ``,
         `Best regards,`,
         `Desi Aura Team`
       ].join('\n');
 
+      const customerEmailHtml = `
+        <h2>Thank you for your order with Desi Aura!</h2>
+        <p>Dear ${customerName},</p>
+        <h3>Order Details:</h3>
+        <p><strong>Order ID:</strong> #${orderId}</p>
+        <h3>Items:</h3>
+        <ul>
+          ${detailedItems.map(i => `<li>${i.quantity}x ${i.name} - ₹${i.lineTotal.toFixed(2)}</li>`).join('')}
+        </ul>
+        <p><strong>Total:</strong> ₹${total.toFixed(2)}</p>
+        <h3>Shipping Address:</h3>
+        <p>${address}</p>
+        <p><strong>Payment Method:</strong> Cash on Delivery</p>
+        <p>We'll process your order soon and deliver it to your address.</p>
+        <p><a href="https://desi-aura-store.vercel.app/order-status.html?id=${orderId}">Track your order</a></p>
+        <p>Thank you for shopping with Desi Aura!</p>
+        <p>Best regards,<br>Desi Aura Team</p>
+      `;
+
       try {
         await sendEmailViaBrevoAPI(
           customerEmail,
           `Order Confirmation - Desi Aura #${orderId}`,
-          customerEmailContent
+          customerEmailContent,
+          customerEmailHtml
         );
         console.log('✅ Customer confirmation sent successfully to:', customerEmail);
       } catch (err) {
