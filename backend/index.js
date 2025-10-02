@@ -22,7 +22,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Initialize Brevo transporter
+// Initialize Brevo transporter with multiple configuration options
 let transporter;
 let emailConfigured = false;
 
@@ -35,27 +35,104 @@ async function setupBrevoTransport() {
       return;
     }
     
-    // Create a transporter object using Brevo SMTP transport
-    transporter = nodemailer.createTransport({
-      host: 'smtp-relay.brevo.com',
-      port: 587,
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: process.env.BREVO_EMAIL, // Your Brevo email
-        pass: process.env.BREVO_API_KEY // Your Brevo API key
+    console.log('🔧 Setting up Brevo transporter with credentials:');
+    console.log(`   Email: ${process.env.BREVO_EMAIL}`);
+    console.log(`   API Key: ${process.env.BREVO_API_KEY.substring(0, 8)}...`);
+    
+    // Try multiple Brevo SMTP configurations
+    const configs = [
+      {
+        // Configuration 1: Standard SMTP
+        host: 'smtp-relay.brevo.com',
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.BREVO_EMAIL,
+          pass: process.env.BREVO_API_KEY
+        },
+        tls: {
+          rejectUnauthorized: false
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000
+      },
+      {
+        // Configuration 2: Alternative port
+        host: 'smtp-relay.brevo.com',
+        port: 2525,
+        secure: false,
+        auth: {
+          user: process.env.BREVO_EMAIL,
+          pass: process.env.BREVO_API_KEY
+        },
+        tls: {
+          rejectUnauthorized: false
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000
+      },
+      {
+        // Configuration 3: SSL connection
+        host: 'smtp-relay.brevo.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: process.env.BREVO_EMAIL,
+          pass: process.env.BREVO_API_KEY
+        },
+        tls: {
+          rejectUnauthorized: false
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000
       }
-    });
+    ];
 
-    transporter.verify((error, success) => {
-      if (error) {
-        console.error('❌ Brevo configuration failed:', error);
-      } else {
+    // Try each configuration
+    for (let i = 0; i < configs.length; i++) {
+      const config = configs[i];
+      console.log(`🔧 Trying configuration ${i + 1}: ${config.host}:${config.port} (secure: ${config.secure})`);
+      
+      try {
+        transporter = nodemailer.createTransporter(config);
+        
+        // Test the connection
+        await new Promise((resolve, reject) => {
+          transporter.verify((error, success) => {
+            if (error) {
+              console.error(`❌ Configuration ${i + 1} failed:`, error.message);
+              reject(error);
+            } else {
+              console.log(`✅ Configuration ${i + 1} successful!`);
+              resolve(success);
+            }
+          });
+        });
+        
+        // If we get here, the configuration worked
         emailConfigured = true;
-        console.log('✅ Brevo email service configured');
+        console.log('✅ Brevo email service configured successfully');
+        console.log(`   Using: ${config.host}:${config.port}`);
+        return;
+        
+      } catch (configError) {
+        console.error(`❌ Configuration ${i + 1} failed:`, configError.message);
+        if (i === configs.length - 1) {
+          // Last configuration failed
+          console.error('❌ All Brevo configurations failed');
+          console.error('   This might be due to:');
+          console.error('   1. Incorrect API key or email');
+          console.error('   2. Sender email not verified in Brevo');
+          console.error('   3. Network restrictions on Render');
+          console.error('   4. Brevo service outage');
+        }
       }
-    });
+    }
   } catch (error) {
-    console.error('❌ Failed to setup Brevo:', error);
+    console.error('❌ Failed to setup Brevo:', error.message);
   }
 }
 
@@ -71,7 +148,7 @@ function generateOrderId() {
 // Sync DB and run seed if needed
 (async () => {
   try {
-    await sequelize.sync({ force: true }); // Use force: true to recreate tables with new structure
+    await sequelize.sync({ force: false }); // Changed to false to preserve data
     console.log('DB synced');
 
     // Check if we need to seed the database
@@ -102,7 +179,8 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0',
     uptime: process.uptime(),
     emailConfigured: emailConfigured,
-    brevoEmail: process.env.BREVO_EMAIL ? 'configured' : 'not configured'
+    brevoEmail: process.env.BREVO_EMAIL ? 'configured' : 'not configured',
+    brevoApiKey: process.env.BREVO_API_KEY ? 'configured' : 'not configured'
   });
 });
 
@@ -133,7 +211,8 @@ app.get('/api/test-email', async (req, res) => {
       return res.status(500).json({
         error: 'Email service not configured',
         emailConfigured: emailConfigured,
-        brevoEmail: process.env.BREVO_EMAIL ? 'configured' : 'not configured'
+        brevoEmail: process.env.BREVO_EMAIL ? 'configured' : 'not configured',
+        brevoApiKey: process.env.BREVO_API_KEY ? 'configured' : 'not configured'
       });
     }
 
