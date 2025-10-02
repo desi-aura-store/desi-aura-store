@@ -220,6 +220,76 @@
       animation: spin 1s linear infinite;
     }
     
+    .existing-orders {
+      background: var(--background);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 30px;
+    }
+    
+    .existing-orders h3 {
+      color: var(--primary);
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+    
+    .order-tracking {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .order-tracking input {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    
+    .track-btn {
+      background: var(--primary);
+      color: var(--text-light);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .track-btn:hover {
+      background: var(--accent);
+    }
+    
+    .recent-orders {
+      margin-top: 20px;
+    }
+    
+    .recent-order-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .recent-order-item:last-child {
+      border-bottom: none;
+    }
+    
+    .recent-order-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    .recent-order-link:hover {
+      text-decoration: underline;
+    }
+    
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
@@ -249,6 +319,15 @@
       .cart-summary {
         max-width: 100%;
       }
+      
+      .order-tracking {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .track-btn {
+        margin-top: 10px;
+      }
     }
   </style>
 </head>
@@ -259,6 +338,7 @@
       <a href="/index.html">Home</a>
       <a href="/shop.html">Shop</a>
       <a href="/cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+      <a href="/order-status.html">Track Order</a>
     </nav>
   </header>
 
@@ -266,6 +346,17 @@
     <div class="cart-header">
       <h2>Your Shopping Cart</h2>
       <a href="/shop.html" class="continue-shopping">Continue Shopping</a>
+    </div>
+    
+    <div class="existing-orders">
+      <h3>Track Your Order</h3>
+      <div class="order-tracking">
+        <input type="text" id="order-id-input" placeholder="Enter your order ID (e.g., ORD-ABC12345)">
+        <button id="track-order-btn" class="track-btn">Track</button>
+      </div>
+      <div id="recent-orders" class="recent-orders">
+        <p>Enter your order ID above to track your order status.</p>
+      </div>
     </div>
     
     <div id="cart" class="cart-items">
@@ -292,12 +383,55 @@
 
   <footer>
     <p>&copy; 2025 Desi Aura. All rights reserved.</p>
+    <div class="footer-links">
+      <a href="/index.html">Home</a>
+      <a href="/shop.html">Shop</a>
+      <a href="/order-status.html">Track Order</a>
+      <a href="/contact.html">Contact Us</a>
+    </div>
   </footer>
 
   <script src="assets/js/config.js"></script>
   <script src="assets/js/api.js"></script>
   <script src="assets/js/cart.js"></script>
   <script>
+    // Track order button event listener
+    document.getElementById('track-order-btn').addEventListener('click', function() {
+      const orderId = document.getElementById('order-id-input').value.trim();
+      if (orderId) {
+        window.location.href = `/order-status.html?id=${orderId}`;
+      } else {
+        alert('Please enter a valid order ID');
+      }
+    });
+    
+    // Allow pressing Enter in the order ID input
+    document.getElementById('order-id-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        document.getElementById('track-order-btn').click();
+      }
+    });
+    
+    // Load recent orders from localStorage
+    function loadRecentOrders() {
+      const recentOrders = JSON.parse(localStorage.getItem('recent_orders') || '[]');
+      const recentOrdersContainer = document.getElementById('recent-orders');
+      
+      if (recentOrders.length > 0) {
+        recentOrdersContainer.innerHTML = `
+          <h4>Recent Orders:</h4>
+          ${recentOrders.map(order => `
+            <div class="recent-order-item">
+              <span>Order #${order.id}</span>
+              <a href="/order-status.html?id=${order.id}" class="recent-order-link">View Status</a>
+            </div>
+          `).join('')}
+        `;
+      } else {
+        recentOrdersContainer.innerHTML = '<p>Enter your order ID above to track your order status.</p>';
+      }
+    }
+    
     async function render() {
       const cart = loadCart();
       const root = document.getElementById('cart');
@@ -313,6 +447,7 @@
         document.getElementById('cart-subtotal').innerText = '₹0.00';
         document.getElementById('cart-shipping').innerText = 'FREE';
         document.getElementById('cart-total').innerText = '₹0.00';
+        loadRecentOrders();
         return;
       }
       
@@ -400,6 +535,8 @@
           render();
         });
       });
+      
+      loadRecentOrders();
     }
     
     render();
