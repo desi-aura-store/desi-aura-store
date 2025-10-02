@@ -165,22 +165,43 @@
       margin-top: 40px;
     }
     
-    .continue-shopping {
-      background: var(--primary);
-      color: var(--text-light);
-      border: none;
+    .action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .action-button {
+      display: inline-block;
       padding: 15px 30px;
       border-radius: 30px;
       font-size: 1.1rem;
       font-weight: bold;
       cursor: pointer;
       text-decoration: none;
-      display: inline-block;
       transition: all 0.3s ease;
     }
     
-    .continue-shopping:hover {
+    .primary-button {
+      background: var(--primary);
+      color: var(--text-light);
+    }
+    
+    .primary-button:hover {
       background: var(--accent);
+      transform: translateY(-2px);
+    }
+    
+    .secondary-button {
+      background: var(--background);
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+    
+    .secondary-button:hover {
+      background: var(--primary);
+      color: var(--text-light);
     }
     
     .order-status {
@@ -227,6 +248,11 @@
       .order-item-price {
         align-self: flex-end;
       }
+      
+      .action-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
     }
   </style>
 </head>
@@ -237,6 +263,7 @@
       <a href="index.html">Home</a>
       <a href="shop.html">Shop</a>
       <a href="cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+      <a href="order-status.html">Track Order</a>
     </nav>
   </header>
 
@@ -248,6 +275,12 @@
 
   <footer>
     <p>&copy; 2025 Desi Aura. All rights reserved.</p>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="shop.html">Shop</a>
+      <a href="order-status.html">Track Order</a>
+      <a href="contact.html">Contact Us</a>
+    </div>
   </footer>
 
   <script src="assets/js/config.js"></script>
@@ -263,7 +296,7 @@
           <div class="empty-order">
             <h3>Order Not Found</h3>
             <p>We couldn't find your order. Please check your order number or contact support.</p>
-            <a href="index.html" class="continue-shopping">Go to Homepage</a>
+            <a href="index.html" class="action-button secondary-button">Go to Homepage</a>
           </div>
         `;
         return;
@@ -277,7 +310,7 @@
             <div class="empty-order">
               <h3>Order Not Found</h3>
               <p>We couldn't find your order. Please check your order number or contact support.</p>
-              <a href="index.html" class="continue-shopping">Go to Homepage</a>
+              <a href="index.html" class="action-button secondary-button">Go to Homepage</a>
             </div>
           `;
           return;
@@ -359,7 +392,10 @@
           </div>
           
           <div class="actions">
-            <a href="shop.html" class="continue-shopping">Continue Shopping</a>
+            <div class="action-buttons">
+              <a href="order-status.html?id=${data.id}" class="action-button primary-button">Track Your Order</a>
+              <a href="shop.html" class="action-button secondary-button">Continue Shopping</a>
+            </div>
           </div>
         `;
         
@@ -369,13 +405,11 @@
           <div class="empty-order">
             <h3>Error Loading Order</h3>
             <p>We encountered an error while loading your order details. Please try again later.</p>
-            <a href="index.html" class="continue-shopping">Go to Homepage</a>
+            <a href="index.html" class="action-button secondary-button">Go to Homepage</a>
           </div>
         `;
       }
     })();
-
-    
   </script>
 </body>
 </html>
