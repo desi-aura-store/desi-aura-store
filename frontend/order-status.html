@@ -1,0 +1,482 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"> 
+  <title>Order Status — Desi Aura</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    /* Order status specific styles */
+    .order-status-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .order-header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: var(--secondary);
+      border-radius: 12px;
+      border: 2px solid var(--border-color);
+    }
+    
+    .order-header h1 {
+      color: var(--primary);
+      margin: 0 0 10px 0;
+      font-size: 2rem;
+    }
+    
+    .order-id {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--accent);
+      margin: 10px 0;
+    }
+    
+    .order-status {
+      display: inline-block;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-weight: bold;
+      margin: 10px 0;
+      text-transform: uppercase;
+    }
+    
+    .status-pending {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    
+    .status-processing {
+      background: #cce5ff;
+      color: #004085;
+      border: 1px solid #b3d7ff;
+    }
+    
+    .status-shipped {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .status-delivered {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    
+    .order-section {
+      background: var(--background);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 20px;
+    }
+    
+    .order-section h2 {
+      color: var(--primary);
+      margin: 0 0 20px 0;
+      font-size: 1.5rem;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 10px;
+    }
+    
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    
+    .info-item {
+      margin-bottom: 15px;
+    }
+    
+    .info-label {
+      font-weight: bold;
+      color: var(--text-dark);
+      margin-bottom: 5px;
+    }
+    
+    .info-value {
+      color: var(--muted-text);
+    }
+    
+    .order-items {
+      margin-top: 20px;
+    }
+    
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--secondary);
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    
+    .order-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+    
+    .item-info {
+      flex: 1;
+    }
+    
+    .item-name {
+      font-weight: bold;
+      color: var(--text-dark);
+      font-size: 1.1rem;
+    }
+    
+    .item-details {
+      color: var(--muted-text);
+      margin-top: 5px;
+    }
+    
+    .item-price {
+      font-weight: bold;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+    
+    .order-total {
+      text-align: right;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px solid var(--border-color);
+    }
+    
+    .total-amount {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 50px;
+    }
+    
+    .spinner {
+      border: 4px solid var(--border-color);
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .error {
+      text-align: center;
+      padding: 50px;
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      border-radius: 8px;
+      color: #721c24;
+    }
+    
+    .back-button {
+      display: inline-block;
+      background: var(--primary);
+      color: var(--text-light);
+      padding: 12px 24px;
+      border-radius: 30px;
+      text-decoration: none;
+      font-weight: bold;
+      margin-top: 20px;
+      transition: all 0.3s ease;
+    }
+    
+    .back-button:hover {
+      background: var(--accent);
+      transform: translateY(-2px);
+    }
+    
+    .timeline {
+      margin-top: 20px;
+      position: relative;
+    }
+    
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 20px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border-color);
+    }
+    
+    .timeline-item {
+      position: relative;
+      padding-left: 50px;
+      margin-bottom: 20px;
+    }
+    
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: 14px;
+      top: 5px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--border-color);
+      border: 2px solid var(--background);
+    }
+    
+    .timeline-item.completed::before {
+      background: var(--primary);
+    }
+    
+    .timeline-content {
+      background: var(--secondary);
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+    
+    .timeline-title {
+      font-weight: bold;
+      color: var(--text-dark);
+    }
+    
+    .timeline-date {
+      font-size: 0.9rem;
+      color: var(--muted-text);
+    }
+    
+    @media (max-width: 768px) {
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .order-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      
+      .item-price {
+        align-self: flex-end;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Desi Aura</h1>
+    <nav>
+      <a href="/index.html">Home</a>
+      <a href="/shop.html">Shop</a>
+      <a href="/cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+    </nav>
+  </header>
+
+  <main class="order-status-container">
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Loading order details...</p>
+    </div>
+    
+    <div id="error" class="error" style="display: none;">
+      <h2>Order Not Found</h2>
+      <p>We couldn't find the order you're looking for. Please check the order ID and try again.</p>
+      <a href="/index.html" class="back-button">Return to Home</a>
+    </div>
+    
+    <div id="order-content" style="display: none;">
+      <div class="order-header">
+        <h1>Order Status</h1>
+        <div class="order-id" id="order-id"></div>
+        <div class="order-status" id="order-status"></div>
+        <p id="order-date"></p>
+      </div>
+      
+      <div class="order-section">
+        <h2>Order Timeline</h2>
+        <div class="timeline" id="timeline">
+          <div class="timeline-item completed">
+            <div class="timeline-content">
+              <div class="timeline-title">Order Placed</div>
+              <div class="timeline-date" id="placed-date"></div>
+            </div>
+          </div>
+          <div class="timeline-item" id="processing-item">
+            <div class="timeline-content">
+              <div class="timeline-title">Processing</div>
+              <div class="timeline-date">Your order is being prepared</div>
+            </div>
+          </div>
+          <div class="timeline-item" id="shipped-item">
+            <div class="timeline-content">
+              <div class="timeline-title">Shipped</div>
+              <div class="timeline-date">Order has been shipped</div>
+            </div>
+          </div>
+          <div class="timeline-item" id="delivered-item">
+            <div class="timeline-content">
+              <div class="timeline-title">Delivered</div>
+              <div class="timeline-date">Order has been delivered</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="order-section">
+        <h2>Customer Information</h2>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Name</div>
+            <div class="info-value" id="customer-name"></div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Phone</div>
+            <div class="info-value" id="customer-phone"></div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Email</div>
+            <div class="info-value" id="customer-email"></div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Payment Method</div>
+            <div class="info-value">Cash on Delivery</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="order-section">
+        <h2>Shipping Address</h2>
+        <div class="info-value" id="shipping-address"></div>
+      </div>
+      
+      <div class="order-section">
+        <h2>Order Items</h2>
+        <div class="order-items" id="order-items"></div>
+        <div class="order-total">
+          <div class="total-amount" id="total-amount"></div>
+        </div>
+      </div>
+      
+      <div style="text-align: center;">
+        <a href="/shop.html" class="back-button">Continue Shopping</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Desi Aura. All rights reserved.</p>
+  </footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get order ID from URL parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get('id');
+      
+      if (!orderId) {
+        showError();
+        return;
+      }
+      
+      // Fetch order details
+      fetchOrderDetails(orderId);
+    });
+    
+    async function fetchOrderDetails(orderId) {
+      try {
+        const order = await API.getOrder(orderId);
+        displayOrderDetails(order);
+      } catch (error) {
+        console.error('Error fetching order:', error);
+        showError();
+      }
+    }
+    
+    function displayOrderDetails(order) {
+      // Hide loading, show content
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('order-content').style.display = 'block';
+      
+      // Update order header
+      document.getElementById('order-id').textContent = `#${order.id}`;
+      document.getElementById('order-status').textContent = order.status || 'Pending';
+      document.getElementById('order-date').textContent = `Order placed on ${new Date(order.createdAt).toLocaleDateString()}`;
+      
+      // Update status styling
+      const statusElement = document.getElementById('order-status');
+      statusElement.className = 'order-status status-' + (order.status || 'pending');
+      
+      // Update timeline based on status
+      updateTimeline(order.status);
+      
+      // Update customer information
+      document.getElementById('customer-name').textContent = order.customerName;
+      document.getElementById('customer-phone').textContent = order.customerPhone || 'Not provided';
+      document.getElementById('customer-email').textContent = order.customerEmail || 'Not provided';
+      document.getElementById('shipping-address').textContent = order.address;
+      
+      // Update order items
+      const itemsContainer = document.getElementById('order-items');
+      itemsContainer.innerHTML = order.items.map(item => `
+        <div class="order-item">
+          <div class="item-info">
+            <div class="item-name">${item.name}</div>
+            <div class="item-details">Quantity: ${item.quantity} × ₹${item.price.toFixed(2)}</div>
+          </div>
+          <div class="item-price">₹${item.lineTotal.toFixed(2)}</div>
+        </div>
+      `).join('');
+      
+      // Update total
+      document.getElementById('total-amount').textContent = `Total: ₹${order.total.toFixed(2)}`;
+      
+      // Update placed date in timeline
+      document.getElementById('placed-date').textContent = new Date(order.createdAt).toLocaleString();
+    }
+    
+    function updateTimeline(status) {
+      const processingItem = document.getElementById('processing-item');
+      const shippedItem = document.getElementById('shipped-item');
+      const deliveredItem = document.getElementById('delivered-item');
+      
+      switch(status) {
+        case 'processing':
+          processingItem.classList.add('completed');
+          break;
+        case 'shipped':
+          processingItem.classList.add('completed');
+          shippedItem.classList.add('completed');
+          break;
+        case 'delivered':
+          processingItem.classList.add('completed');
+          shippedItem.classList.add('completed');
+          deliveredItem.classList.add('completed');
+          break;
+        default:
+          // pending - only first item is completed
+          break;
+      }
+    }
+    
+    function showError() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
