@@ -224,65 +224,6 @@
       to { transform: rotate(360deg); }
     }
     
-    .order-tracking {
-      background: var(--background);
-      border: 2px solid var(--border-color);
-      border-radius: 12px;
-      padding: 25px;
-      margin-bottom: 30px;
-    }
-    
-    .order-tracking h3 {
-      margin-top: 0;
-      margin-bottom: 15px;
-      color: var(--primary);
-      font-size: 1.3rem;
-    }
-    
-    .track-order-form {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-    
-    .track-order-input {
-      flex: 1;
-      padding: 10px 15px;
-      border: 2px solid var(--border-color);
-      border-radius: 30px;
-      font-size: 1rem;
-    }
-    
-    .track-order-input:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-    
-    .track-order-btn {
-      background: var(--primary);
-      color: var(--text-light);
-      border: none;
-      padding: 10px 20px;
-      border-radius: 30px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    
-    .track-order-btn:hover {
-      background: var(--accent);
-    }
-    
-    .track-order-link {
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 600;
-    }
-    
-    .track-order-link:hover {
-      text-decoration: underline;
-    }
-    
     @media (max-width: 768px) {
       .cart-item {
         grid-template-columns: 80px 1fr;
@@ -308,10 +249,6 @@
       .cart-summary {
         max-width: 100%;
       }
-      
-      .track-order-form {
-        flex-direction: column;
-      }
     }
   </style>
 </head>
@@ -330,15 +267,6 @@
     <div class="cart-header">
       <h2>Your Shopping Cart</h2>
       <a href="/shop.html" class="continue-shopping">Continue Shopping</a>
-    </div>
-    
-    <div class="order-tracking">
-      <h3>Track Your Order</h3>
-      <div class="track-order-form">
-        <input type="text" id="order-id-input" class="track-order-input" placeholder="Enter your order ID (e.g., ORD-ABC12345)">
-        <button id="track-order-btn" class="track-order-btn">Track</button>
-      </div>
-      <p>Don't have your order ID? <a href="/order-status.html" class="track-order-link">Find your order</a></p>
     </div>
     
     <div id="cart" class="cart-items">
@@ -365,34 +293,12 @@
 
   <footer>
     <p>&copy; 2025 Desi Aura. All rights reserved.</p>
-    <div class="footer-links">
-      <a href="/index.html">Home</a>
-      <a href="/shop.html">Shop</a>
-      <a href="/order-status.html">Track Order</a>
-    </div>
   </footer>
 
   <script src="assets/js/config.js"></script>
   <script src="assets/js/api.js"></script>
   <script src="assets/js/cart.js"></script>
   <script>
-    // Track order functionality
-    document.getElementById('track-order-btn').addEventListener('click', function() {
-      const orderId = document.getElementById('order-id-input').value.trim();
-      if (orderId) {
-        window.location.href = `/order-status.html?id=${orderId}`;
-      } else {
-        alert('Please enter an order ID');
-      }
-    });
-    
-    // Allow Enter key to submit
-    document.getElementById('order-id-input').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        document.getElementById('track-order-btn').click();
-      }
-    });
-    
     async function render() {
       const cart = loadCart();
       const root = document.getElementById('cart');
