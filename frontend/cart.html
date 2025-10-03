@@ -220,7 +220,11 @@
       animation: spin 1s linear infinite;
     }
     
-    .existing-orders {
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .order-tracking {
       background: var(--background);
       border: 2px solid var(--border-color);
       border-radius: 12px;
@@ -228,70 +232,55 @@
       margin-bottom: 30px;
     }
     
-    .existing-orders h3 {
-      color: var(--primary);
+    .order-tracking h3 {
       margin-top: 0;
       margin-bottom: 15px;
+      color: var(--primary);
+      font-size: 1.3rem;
     }
     
-    .order-tracking {
+    .track-order-form {
       display: flex;
-      align-items: center;
       gap: 10px;
       margin-bottom: 15px;
     }
     
-    .order-tracking input {
+    .track-order-input {
       flex: 1;
-      padding: 10px;
+      padding: 10px 15px;
       border: 2px solid var(--border-color);
-      border-radius: 8px;
+      border-radius: 30px;
       font-size: 1rem;
     }
     
-    .track-btn {
+    .track-order-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .track-order-btn {
       background: var(--primary);
       color: var(--text-light);
       border: none;
       padding: 10px 20px;
-      border-radius: 8px;
-      font-weight: bold;
+      border-radius: 30px;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
     }
     
-    .track-btn:hover {
+    .track-order-btn:hover {
       background: var(--accent);
     }
     
-    .recent-orders {
-      margin-top: 20px;
-    }
-    
-    .recent-order-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px;
-      border-bottom: 1px solid var(--border-color);
-    }
-    
-    .recent-order-item:last-child {
-      border-bottom: none;
-    }
-    
-    .recent-order-link {
+    .track-order-link {
       color: var(--primary);
       text-decoration: none;
       font-weight: 600;
     }
     
-    .recent-order-link:hover {
+    .track-order-link:hover {
       text-decoration: underline;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
     }
     
     @media (max-width: 768px) {
@@ -320,13 +309,8 @@
         max-width: 100%;
       }
       
-      .order-tracking {
+      .track-order-form {
         flex-direction: column;
-        align-items: stretch;
-      }
-      
-      .track-btn {
-        margin-top: 10px;
       }
     }
   </style>
@@ -348,15 +332,13 @@
       <a href="/shop.html" class="continue-shopping">Continue Shopping</a>
     </div>
     
-    <div class="existing-orders">
+    <div class="order-tracking">
       <h3>Track Your Order</h3>
-      <div class="order-tracking">
-        <input type="text" id="order-id-input" placeholder="Enter your order ID (e.g., ORD-ABC12345)">
-        <button id="track-order-btn" class="track-btn">Track</button>
+      <div class="track-order-form">
+        <input type="text" id="order-id-input" class="track-order-input" placeholder="Enter your order ID (e.g., ORD-ABC12345)">
+        <button id="track-order-btn" class="track-order-btn">Track</button>
       </div>
-      <div id="recent-orders" class="recent-orders">
-        <p>Enter your order ID above to track your order status.</p>
-      </div>
+      <p>Don't have your order ID? <a href="/order-status.html" class="track-order-link">Find your order</a></p>
     </div>
     
     <div id="cart" class="cart-items">
@@ -387,7 +369,6 @@
       <a href="/index.html">Home</a>
       <a href="/shop.html">Shop</a>
       <a href="/order-status.html">Track Order</a>
-      <a href="/contact.html">Contact Us</a>
     </div>
   </footer>
 
@@ -395,42 +376,22 @@
   <script src="assets/js/api.js"></script>
   <script src="assets/js/cart.js"></script>
   <script>
-    // Track order button event listener
+    // Track order functionality
     document.getElementById('track-order-btn').addEventListener('click', function() {
       const orderId = document.getElementById('order-id-input').value.trim();
       if (orderId) {
         window.location.href = `/order-status.html?id=${orderId}`;
       } else {
-        alert('Please enter a valid order ID');
+        alert('Please enter an order ID');
       }
     });
     
-    // Allow pressing Enter in the order ID input
+    // Allow Enter key to submit
     document.getElementById('order-id-input').addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
         document.getElementById('track-order-btn').click();
       }
     });
-    
-    // Load recent orders from localStorage
-    function loadRecentOrders() {
-      const recentOrders = JSON.parse(localStorage.getItem('recent_orders') || '[]');
-      const recentOrdersContainer = document.getElementById('recent-orders');
-      
-      if (recentOrders.length > 0) {
-        recentOrdersContainer.innerHTML = `
-          <h4>Recent Orders:</h4>
-          ${recentOrders.map(order => `
-            <div class="recent-order-item">
-              <span>Order #${order.id}</span>
-              <a href="/order-status.html?id=${order.id}" class="recent-order-link">View Status</a>
-            </div>
-          `).join('')}
-        `;
-      } else {
-        recentOrdersContainer.innerHTML = '<p>Enter your order ID above to track your order status.</p>';
-      }
-    }
     
     async function render() {
       const cart = loadCart();
@@ -447,7 +408,6 @@
         document.getElementById('cart-subtotal').innerText = '₹0.00';
         document.getElementById('cart-shipping').innerText = 'FREE';
         document.getElementById('cart-total').innerText = '₹0.00';
-        loadRecentOrders();
         return;
       }
       
@@ -535,8 +495,6 @@
           render();
         });
       });
-      
-      loadRecentOrders();
     }
     
     render();
