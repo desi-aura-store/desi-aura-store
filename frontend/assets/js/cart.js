@@ -60,6 +60,16 @@ function getOrderHistory() {
   return raw ? JSON.parse(raw) : [];
 }
 
+// Sanitize HTML to prevent XSS
+function escapeHtml(unsafe) {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function displayRecentOrders() {
   const orderHistory = getOrderHistory();
   const recentOrdersSection = document.getElementById('recent-orders');
@@ -80,11 +90,11 @@ function displayRecentOrders() {
       ${orderHistory.slice(0, 3).map(order => `
         <div class="recent-order-item">
           <div class="order-info">
-            <div class="order-id">Order #${order.id}</div>
+            <div class="order-id">Order #${escapeHtml(order.id)}</div>
             <div class="order-date">${new Date(order.createdAt).toLocaleDateString()}</div>
-            <div class="order-status">${order.status || 'Processing'}</div>
+            <div class="order-status">${escapeHtml(order.status || 'Processing')}</div>
           </div>
-          <a href="/order-status.html?id=${order.id}" class="track-order-btn">Track</a>
+          <a href="/order-status.html?id=${encodeURIComponent(order.id)}" class="track-order-btn">Track</a>
         </div>
       `).join('')}
     </div>
