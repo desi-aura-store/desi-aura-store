@@ -1,5 +1,5 @@
 const CART_KEY = 'ecom_cart_v1';
-const RECENT_ORDERS_KEY = 'recent_orders';
+const ORDER_HISTORY_KEY = 'desi_aura_order_history';
 
 function loadCart() {
   const raw = localStorage.getItem(CART_KEY);
@@ -44,58 +44,66 @@ function updateCartCount() {
   if (badge) badge.textContent = count;
 }
 
-// ---- New: Recent Orders Management ----
-function saveRecentOrder(order) {
-  const recentOrders = JSON.parse(localStorage.getItem(RECENT_ORDERS_KEY) || '[]');
-  
-  // Check if order already exists
-  const existingIndex = recentOrders.findIndex(o => o.id === order.id);
-  if (existingIndex !== -1) {
-    // Update existing order
-    recentOrders[existingIndex] = order;
-  } else {
-    // Add new order at the beginning
-    recentOrders.unshift(order);
+// ---- New: Order History ----
+function saveOrderToHistory(orderData) {
+  const orderHistory = getOrderHistory();
+  orderHistory.push(orderData);
+  // Keep only the last 10 orders
+  if (orderHistory.length > 10) {
+    orderHistory.shift();
   }
-  
-  // Keep only the 5 most recent orders
-  if (recentOrders.length > 5) {
-    recentOrders.splice(5);
-  }
-  
-  localStorage.setItem(RECENT_ORDERS_KEY, JSON.stringify(recentOrders));
+  localStorage.setItem(ORDER_HISTORY_KEY, JSON.stringify(orderHistory));
 }
 
-function loadRecentOrders() {
-  return JSON.parse(localStorage.getItem(RECENT_ORDERS_KEY) || '[]');
+function getOrderHistory() {
+  const raw = localStorage.getItem(ORDER_HISTORY_KEY);
+  return raw ? JSON.parse(raw) : [];
 }
 
-// ---- New: Order Tracking ----
-function trackOrder(orderId) {
-  if (orderId) {
-    window.location.href = `/order-status.html?id=${orderId}`;
-  } else {
-    alert('Please enter a valid order ID');
+function displayRecentOrders() {
+  const orderHistory = getOrderHistory();
+  const recentOrdersSection = document.getElementById('recent-orders');
+  
+  if (!recentOrdersSection) return;
+  
+  if (orderHistory.length === 0) {
+    recentOrdersSection.innerHTML = `
+      <p>You don't have any recent orders.</p>
+      <a href="/shop.html" class="continue-shopping">Start Shopping</a>
+    `;
+    return;
   }
+  
+  recentOrdersSection.innerHTML = `
+    <h3>Recent Orders</h3>
+    <div class="recent-orders-list">
+      ${orderHistory.slice(0, 3).map(order => `
+        <div class="recent-order-item">
+          <div class="order-info">
+            <div class="order-id">Order #${order.id}</div>
+            <div class="order-date">${new Date(order.createdAt).toLocaleDateString()}</div>
+            <div class="order-status">${order.status || 'Processing'}</div>
+          </div>
+          <a href="/order-status.html?id=${order.id}" class="track-order-btn">Track</a>
+        </div>
+      `).join('')}
+    </div>
+    <a href="/order-status.html" class="view-all-orders">View All Orders</a>
+  `;
 }
 
-// ---- New: Save Order After Checkout ----
+// Save order when checkout is successful
 function saveOrderAfterCheckout(orderData) {
-  // Save order to recent orders
-  saveRecentOrder({
-    id: orderData.orderId,
-    date: new Date().toISOString(),
-    total: orderData.total,
-    status: 'pending'
-  });
-  
-  // Clear cart
+  saveOrderToHistory(orderData);
   clearCart();
 }
 
 // Ensure badge updates when page loads
-document.addEventListener("DOMContentLoaded", updateCartCount);
-
-// Make functions available globally
-window.saveOrderAfterCheckout = saveOrderAfterCheckout;
-window.trackOrder = trackOrder;
+document.addEventListener("DOMContentLoaded", function() {
+  updateCartCount();
+  
+  // Display recent orders if we're on the cart page
+  if (window.location.pathname.includes('cart.html')) {
+    displayRecentOrders();
+  }
+});
