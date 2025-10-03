@@ -172,36 +172,36 @@
       flex-wrap: wrap;
     }
     
-    .action-button {
-      display: inline-block;
+    .continue-shopping, .track-order {
       padding: 15px 30px;
       border-radius: 30px;
       font-size: 1.1rem;
       font-weight: bold;
       cursor: pointer;
       text-decoration: none;
+      display: inline-block;
       transition: all 0.3s ease;
     }
     
-    .primary-button {
-      background: var(--primary);
-      color: var(--text-light);
-    }
-    
-    .primary-button:hover {
-      background: var(--accent);
-      transform: translateY(-2px);
-    }
-    
-    .secondary-button {
+    .continue-shopping {
       background: var(--background);
       color: var(--primary);
       border: 2px solid var(--primary);
     }
     
-    .secondary-button:hover {
+    .continue-shopping:hover {
       background: var(--primary);
       color: var(--text-light);
+    }
+    
+    .track-order {
+      background: var(--primary);
+      color: var(--text-light);
+      border: none;
+    }
+    
+    .track-order:hover {
+      background: var(--accent);
     }
     
     .order-status {
@@ -279,7 +279,6 @@
       <a href="index.html">Home</a>
       <a href="shop.html">Shop</a>
       <a href="order-status.html">Track Order</a>
-      <a href="contact.html">Contact Us</a>
     </div>
   </footer>
 
@@ -296,7 +295,7 @@
           <div class="empty-order">
             <h3>Order Not Found</h3>
             <p>We couldn't find your order. Please check your order number or contact support.</p>
-            <a href="index.html" class="action-button secondary-button">Go to Homepage</a>
+            <a href="index.html" class="continue-shopping">Go to Homepage</a>
           </div>
         `;
         return;
@@ -310,7 +309,7 @@
             <div class="empty-order">
               <h3>Order Not Found</h3>
               <p>We couldn't find your order. Please check your order number or contact support.</p>
-              <a href="index.html" class="action-button secondary-button">Go to Homepage</a>
+              <a href="index.html" class="continue-shopping">Go to Homepage</a>
             </div>
           `;
           return;
@@ -393,8 +392,8 @@
           
           <div class="actions">
             <div class="action-buttons">
-              <a href="order-status.html?id=${data.id}" class="action-button primary-button">Track Your Order</a>
-              <a href="shop.html" class="action-button secondary-button">Continue Shopping</a>
+              <a href="order-status.html?id=${data.id}" class="track-order">Track Your Order</a>
+              <a href="shop.html" class="continue-shopping">Continue Shopping</a>
             </div>
           </div>
         `;
@@ -405,7 +404,7 @@
           <div class="empty-order">
             <h3>Error Loading Order</h3>
             <p>We encountered an error while loading your order details. Please try again later.</p>
-            <a href="index.html" class="action-button secondary-button">Go to Homepage</a>
+            <a href="index.html" class="continue-shopping">Go to Homepage</a>
           </div>
         `;
       }
