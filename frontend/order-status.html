@@ -13,6 +13,90 @@
       padding: 20px;
     }
     
+    .track-order-section {
+      background: var(--background);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    
+    .track-order-section h2 {
+      color: var(--primary);
+      margin: 0 0 20px 0;
+      font-size: 1.8rem;
+    }
+    
+    .track-options {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    
+    .track-option {
+      display: flex;
+      align-items: center;
+      margin: 0 15px;
+      cursor: pointer;
+    }
+    
+    .track-option input {
+      margin-right: 8px;
+    }
+    
+    .track-form {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+      text-align: left;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid var(--border-color);
+      border-radius: 30px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .track-button {
+      background: var(--primary);
+      color: var(--text-light);
+      border: none;
+      padding: 12px 30px;
+      border-radius: 30px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .track-button:hover {
+      background: var(--accent);
+    }
+    
+    .track-button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
     .order-header {
       text-align: center;
       margin-bottom: 30px;
@@ -258,7 +342,66 @@
       color: var(--muted-text);
     }
     
+    .multiple-orders {
+      margin-top: 20px;
+    }
+    
+    .order-card {
+      background: var(--secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .order-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .order-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .order-card-id {
+      font-weight: bold;
+      color: var(--primary);
+    }
+    
+    .order-card-date {
+      font-size: 0.9rem;
+      color: var(--muted-text);
+    }
+    
+    .order-card-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    
+    .order-card-total {
+      font-weight: bold;
+      color: var(--text-dark);
+    }
+    
     @media (max-width: 768px) {
+      .track-options {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .track-option {
+        margin: 5px 0;
+      }
+      
       .info-grid {
         grid-template-columns: 1fr;
       }
@@ -282,19 +425,57 @@
       <a href="/index.html">Home</a>
       <a href="/shop.html">Shop</a>
       <a href="/cart.html">Cart <span id="cart-count" class="cart-count">0</span></a>
+      <a href="/order-status.html">Track Order</a>
     </nav>
   </header>
 
   <main class="order-status-container">
-    <div id="loading" class="loading">
+    <div class="track-order-section">
+      <h2>Track Your Order</h2>
+      
+      <div class="track-options">
+        <div class="track-option">
+          <input type="radio" id="track-by-id" name="track-method" value="id" checked>
+          <label for="track-by-id">Order ID</label>
+        </div>
+        <div class="track-option">
+          <input type="radio" id="track-by-phone" name="track-method" value="phone">
+          <label for="track-by-phone">Mobile Number</label>
+        </div>
+      </div>
+      
+      <div class="track-form">
+        <div class="form-group" id="order-id-group">
+          <label for="order-id-input">Enter Order ID</label>
+          <input type="text" id="order-id-input" placeholder="e.g., ORD-ABC12345">
+        </div>
+        
+        <div class="form-group" id="phone-group" style="display: none;">
+          <label for="phone-input">Enter Mobile Number</label>
+          <input type="tel" id="phone-input" placeholder="e.g., 9876543210">
+        </div>
+        
+        <button id="track-button" class="track-button">Track Order</button>
+      </div>
+    </div>
+    
+    <div id="loading" class="loading" style="display: none;">
       <div class="spinner"></div>
       <p>Loading order details...</p>
     </div>
     
     <div id="error" class="error" style="display: none;">
       <h2>Order Not Found</h2>
-      <p>We couldn't find the order you're looking for. Please check the order ID and try again.</p>
+      <p id="error-message">We couldn't find the order you're looking for. Please check the order ID and try again.</p>
       <a href="/index.html" class="back-button">Return to Home</a>
+    </div>
+    
+    <div id="multiple-orders" style="display: none;">
+      <div class="order-section">
+        <h2>Multiple Orders Found</h2>
+        <p>We found multiple orders associated with this mobile number. Please select one to view details:</p>
+        <div id="orders-list"></div>
+      </div>
     </div>
     
     <div id="order-content" style="display: none;">
@@ -378,38 +559,143 @@
 
   <footer>
     <p>&copy; 2025 Desi Aura. All rights reserved.</p>
+    <div class="footer-links">
+      <a href="/index.html">Home</a>
+      <a href="/shop.html">Shop</a>
+      <a href="/order-status.html">Track Order</a>
+    </div>
   </footer>
 
   <script src="assets/js/config.js"></script>
   <script src="assets/js/api.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Get order ID from URL parameter
+      // Track method toggle
+      const trackOptions = document.querySelectorAll('input[name="track-method"]');
+      const orderIdGroup = document.getElementById('order-id-group');
+      const phoneGroup = document.getElementById('phone-group');
+      
+      trackOptions.forEach(option => {
+        option.addEventListener('change', function() {
+          if (this.value === 'id') {
+            orderIdGroup.style.display = 'block';
+            phoneGroup.style.display = 'none';
+          } else {
+            orderIdGroup.style.display = 'none';
+            phoneGroup.style.display = 'block';
+          }
+        });
+      });
+      
+      // Track button click
+      document.getElementById('track-button').addEventListener('click', trackOrder);
+      
+      // Enter key support
+      document.getElementById('order-id-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') trackOrder();
+      });
+      
+      document.getElementById('phone-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') trackOrder();
+      });
+      
+      // Check if there's an order ID in the URL
       const urlParams = new URLSearchParams(window.location.search);
       const orderId = urlParams.get('id');
       
-      if (!orderId) {
-        showError();
-        return;
+      if (orderId) {
+        document.getElementById('order-id-input').value = orderId;
+        trackOrder();
       }
-      
-      // Fetch order details
-      fetchOrderDetails(orderId);
     });
     
-    async function fetchOrderDetails(orderId) {
+    function trackOrder() {
+      const trackMethod = document.querySelector('input[name="track-method"]:checked').value;
+      let searchValue;
+      
+      if (trackMethod === 'id') {
+        searchValue = document.getElementById('order-id-input').value.trim();
+        if (!searchValue) {
+          showError('Please enter an order ID');
+          return;
+        }
+        fetchOrderById(searchValue);
+      } else {
+        searchValue = document.getElementById('phone-input').value.trim();
+        if (!searchValue) {
+          showError('Please enter a mobile number');
+          return;
+        }
+        // Validate phone number (10 digits)
+        if (!/^\d{10}$/.test(searchValue)) {
+          showError('Please enter a valid 10-digit mobile number');
+          return;
+        }
+        fetchOrdersByPhone(searchValue);
+      }
+    }
+    
+    async function fetchOrderById(orderId) {
+      showLoading();
       try {
         const order = await API.getOrder(orderId);
         displayOrderDetails(order);
       } catch (error) {
         console.error('Error fetching order:', error);
-        showError();
+        showError('We couldn\'t find an order with this ID. Please check and try again.');
       }
     }
     
+    async function fetchOrdersByPhone(phone) {
+      showLoading();
+      try {
+        // Since there's no direct API endpoint for searching by phone,
+        // we'll need to create one in the backend
+        const response = await fetch(`${API_BASE_URL}/api/orders/by-phone/${phone}`);
+        
+        if (!response.ok) {
+          throw new Error('Orders not found');
+        }
+        
+        const orders = await response.json();
+        
+        if (orders.length === 0) {
+          showError('We couldn\'t find any orders associated with this mobile number.');
+        } else if (orders.length === 1) {
+          displayOrderDetails(orders[0]);
+        } else {
+          displayMultipleOrders(orders);
+        }
+      } catch (error) {
+        console.error('Error fetching orders by phone:', error);
+        showError('We couldn\'t find any orders associated with this mobile number.');
+      }
+    }
+    
+    function displayMultipleOrders(orders) {
+      hideLoading();
+      document.getElementById('multiple-orders').style.display = 'block';
+      
+      const ordersList = document.getElementById('orders-list');
+      ordersList.innerHTML = orders.map(order => `
+        <div class="order-card" onclick="selectOrder('${order.id}')">
+          <div class="order-card-header">
+            <div class="order-card-id">Order #${order.id}</div>
+            <div class="order-card-status status-${order.status || 'pending'}">${order.status || 'Pending'}</div>
+          </div>
+          <div class="order-card-date">Placed on ${new Date(order.createdAt).toLocaleDateString()}</div>
+          <div class="order-card-total">Total: ₹${order.total.toFixed(2)}</div>
+        </div>
+      `).join('');
+    }
+    
+    function selectOrder(orderId) {
+      document.getElementById('multiple-orders').style.display = 'none';
+      fetchOrderById(orderId);
+    }
+    
     function displayOrderDetails(order) {
-      // Hide loading, show content
-      document.getElementById('loading').style.display = 'none';
+      hideLoading();
       document.getElementById('order-content').style.display = 'block';
       
       // Update order header
@@ -454,6 +740,11 @@
       const shippedItem = document.getElementById('shipped-item');
       const deliveredItem = document.getElementById('delivered-item');
       
+      // Reset all items
+      processingItem.classList.remove('completed');
+      shippedItem.classList.remove('completed');
+      deliveredItem.classList.remove('completed');
+      
       switch(status) {
         case 'processing':
           processingItem.classList.add('completed');
@@ -473,9 +764,23 @@
       }
     }
     
-    function showError() {
+    function showLoading() {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('error').style.display = 'none';
+      document.getElementById('multiple-orders').style.display = 'none';
+      document.getElementById('order-content').style.display = 'none';
+    }
+    
+    function hideLoading() {
       document.getElementById('loading').style.display = 'none';
+    }
+    
+    function showError(message) {
+      hideLoading();
+      document.getElementById('error-message').textContent = message;
       document.getElementById('error').style.display = 'block';
+      document.getElementById('multiple-orders').style.display = 'none';
+      document.getElementById('order-content').style.display = 'none';
     }
   </script>
 </body>
