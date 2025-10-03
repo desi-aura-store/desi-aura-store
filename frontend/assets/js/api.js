@@ -112,6 +112,31 @@ const API = {
     }
   },
 
+  // Get all orders (for admin panel)
+  getAllOrders: async () => {
+    try {
+      const url = `${base}/api/orders`;
+      logApiCall('GET', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
+      const data = await handleResponse(response);
+      
+      console.log('[API] All orders response:', data);
+      return data;
+    } catch (error) {
+      console.error('[API] Error fetching all orders:', error);
+      throw error;
+    }
+  },
+
   // Get order by ID
   getOrder: async (id) => {
     try {
@@ -137,6 +162,69 @@ const API = {
       return data;
     } catch (error) {
       console.error('[API] Error fetching order:', error);
+      throw error;
+    }
+  },
+
+  // Get orders by phone number
+  getOrdersByPhone: async (phone) => {
+    try {
+      if (!phone) {
+        throw new Error('Phone number is required');
+      }
+      
+      const url = `${base}/api/orders/by-phone/${phone}`;
+      logApiCall('GET', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
+      const data = await handleResponse(response);
+      
+      console.log('[API] Orders by phone response:', data);
+      return data;
+    } catch (error) {
+      console.error('[API] Error fetching orders by phone:', error);
+      throw error;
+    }
+  },
+
+  // Update order status
+  updateOrderStatus: async (orderId, statusData) => {
+    try {
+      if (!orderId) {
+        throw new Error('Order ID is required');
+      }
+      
+      if (!statusData || !statusData.status) {
+        throw new Error('Status is required');
+      }
+      
+      const url = `${base}/api/orders/${orderId}/status`;
+      logApiCall('PUT', url, statusData);
+      
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(statusData),
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
+      const data = await handleResponse(response);
+      
+      console.log('[API] Update order status response:', data);
+      return data;
+    } catch (error) {
+      console.error('[API] Error updating order status:', error);
       throw error;
     }
   },
