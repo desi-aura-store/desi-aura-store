@@ -141,8 +141,10 @@ app.get('/api', (req, res) => {
       'GET /api/products',
       'GET /api/products/:id',
       'POST /api/orders',
+      'GET /api/orders',
       'GET /api/orders/:id',
       'GET /api/orders/by-phone/:phone',
+      'PUT /api/orders/:id/status',
       'GET /api/health',
       'GET /api/ping',
       'GET /api/test-email'
@@ -417,6 +419,39 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
+// Get all orders endpoint
+app.get('/api/orders', async (req, res) => {
+  try {
+    console.log('[API] /api/orders called');
+    
+    const orders = await Order.findAll({
+      order: [['createdAt', 'DESC']]
+    });
+    
+    // Parse items for each order
+    const ordersWithParsedItems = orders.map(order => {
+      const parsedItems = JSON.parse(order.items);
+      return {
+        id: order.id,
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        customerPhone: order.customerPhone,
+        address: order.address,
+        items: parsedItems,
+        total: order.total,
+        status: order.status || 'pending',
+        createdAt: order.createdAt
+      };
+    });
+    
+    console.log(`[API] Found ${ordersWithParsedItems.length} orders`);
+    res.json(ordersWithParsedItems);
+  } catch (err) {
+    console.error('[ERR] /api/orders', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.get('/api/orders/:id', async (req, res) => {
   try {
     console.log(`[API] /api/orders/${req.params.id} called`);
@@ -437,7 +472,7 @@ app.get('/api/orders/:id', async (req, res) => {
       address: order.address,
       items: parsedItems,
       total: order.total,
-      status: order.status,
+      status: order.status || 'pending',
       createdAt: order.createdAt
     });
   } catch (err) {
@@ -477,7 +512,7 @@ app.get('/api/orders/by-phone/:phone', async (req, res) => {
         address: order.address,
         items: parsedItems,
         total: order.total,
-        status: order.status,
+        status: order.status || 'pending',
         createdAt: order.createdAt
       };
     });
@@ -486,6 +521,88 @@ app.get('/api/orders/by-phone/:phone', async (req, res) => {
     res.json(ordersWithParsedItems);
   } catch (err) {
     console.error(`[ERR] /api/orders/by-phone/${req.params.phone}`, err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Update order status endpoint
+app.put('/api/orders/:id/status', async (req, res) => {
+  try {
+    console.log(`[API] PUT /api/orders/${req.params.id}/status called with body:`, req.body);
+    
+    const { status, note, notifyCustomer } = req.body;
+    
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required' });
+    }
+    
+    const order = await Order.findByPk(req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    
+    // Update order status
+    await order.update({ status });
+    
+    // If notifyCustomer is true and email is configured, send notification
+    if (notifyCustomer && emailConfigured && order.customerEmail) {
+      try {
+        const statusMessages = {
+          'pending': 'Your order has been received and is pending',
+          'processing': 'Your order is now being processed',
+          'shipped': 'Your order has been shipped',
+          'out-for-delivery': 'Your order is out for delivery and will arrive today',
+          'delivered': 'Your order has been delivered'
+        };
+        
+        const emailContent = [
+          `Dear ${order.customerName},`,
+          ``,
+          `Your order #${order.id} status has been updated to: ${status}`,
+          ``,
+          statusMessages[status] || `Your order status is now: ${status}`,
+          note ? `Note: ${note}` : '',
+          ``,
+          `You can track your order at: https://desi-aura-store.vercel.app/order-status.html?id=${order.id}`,
+          ``,
+          `Thank you for shopping with Desi Aura!`,
+          ``,
+          `Best regards,`,
+          `Desi Aura Team`
+        ].join('\n');
+        
+        const emailHtml = `
+          <h2>Order Status Update</h2>
+          <p>Dear ${order.customerName},</p>
+          <p>Your order #${order.id} status has been updated to: <strong>${status}</strong></p>
+          <p>${statusMessages[status] || `Your order status is now: ${status}`}</p>
+          ${note ? `<p>Note: ${note}</p>` : ''}
+          <p>You can track your order at: <a href="https://desi-aura-store.vercel.app/order-status.html?id=${order.id}">https://desi-aura-store.vercel.app/order-status.html?id=${order.id}</a></p>
+          <p>Thank you for shopping with Desi Aura!</p>
+          <p>Best regards,<br>Desi Aura Team</p>
+        `;
+        
+        await sendEmailViaBrevoAPI(
+          order.customerEmail,
+          `Order Status Update - Desi Aura #${order.id}`,
+          emailContent,
+          emailHtml
+        );
+        
+        console.log(`✅ Status update notification sent to: ${order.customerEmail}`);
+      } catch (err) {
+        console.error('❌ Failed to send status update notification:', err);
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Order status updated successfully',
+      status: status
+    });
+  } catch (err) {
+    console.error(`[ERR] PUT /api/orders/${req.params.id}/status`, err);
     res.status(500).json({ error: 'Server error' });
   }
 });
