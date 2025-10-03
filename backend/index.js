@@ -142,6 +142,7 @@ app.get('/api', (req, res) => {
       'GET /api/products/:id',
       'POST /api/orders',
       'GET /api/orders/:id',
+      'GET /api/orders/by-phone/:phone',
       'GET /api/health',
       'GET /api/ping',
       'GET /api/test-email'
@@ -441,6 +442,50 @@ app.get('/api/orders/:id', async (req, res) => {
     });
   } catch (err) {
     console.error(`[ERR] /api/orders/${req.params.id}`, err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Add this endpoint to search orders by phone number
+app.get('/api/orders/by-phone/:phone', async (req, res) => {
+  try {
+    console.log(`[API] /api/orders/by-phone/${req.params.phone} called`);
+    
+    const phone = req.params.phone;
+    
+    // Find all orders with the matching phone number
+    const orders = await Order.findAll({
+      where: {
+        customerPhone: phone
+      },
+      order: [['createdAt', 'DESC']]
+    });
+    
+    if (orders.length === 0) {
+      console.log(`[API] No orders found for phone: ${phone}`);
+      return res.status(404).json({ error: 'No orders found' });
+    }
+    
+    // Parse items for each order
+    const ordersWithParsedItems = orders.map(order => {
+      const parsedItems = JSON.parse(order.items);
+      return {
+        id: order.id,
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        customerPhone: order.customerPhone,
+        address: order.address,
+        items: parsedItems,
+        total: order.total,
+        status: order.status,
+        createdAt: order.createdAt
+      };
+    });
+    
+    console.log(`[API] Found ${orders.length} orders for phone: ${phone}`);
+    res.json(ordersWithParsedItems);
+  } catch (err) {
+    console.error(`[ERR] /api/orders/by-phone/${req.params.phone}`, err);
     res.status(500).json({ error: 'Server error' });
   }
 });
